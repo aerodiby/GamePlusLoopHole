@@ -10,28 +10,24 @@ namespace UI.MainMenuUI
 {
     /// <summary>
     /// Master transition controller for the Hi-Fi Rush comic UI.
-    /// Handles high-octane "Naik ke Atas" (Ascending) launch into the Option Screen,
-    /// and dynamic "Turun ke Bawah" (Descending Slam) return to the Title Screen.
-    /// Supports transparent blue Parallel V speedlines, comic overshoot bounces, and speed tuning.
+    /// Features:
+    /// - Smooth, natural choreography with continuous acceleration/deceleration.
+    /// - Semi-transparent speedline intro & outro with deep dark comic peak in the middle.
+    /// - 100% Canvas coverage (no 3D scene/skybox leaks).
+    /// - Fluid "Naik ke Atas" (Ascending) and "Turun ke Bawah" (Descending) transitions.
     /// </summary>
     public class MainMenuUITransition : MonoBehaviour
     {
         [Header("Transition Speed & Timing Settings")]
-        [Tooltip("Overall transition speed multiplier. 1.0 = normal, 1.5 = faster, 0.5 = slower.")]
+        [Tooltip("Overall transition speed multiplier. 1.0 = normal, 1.5 = faster, 0.7 = slower.")]
         [Range(0.2f, 3.0f)]
         public float transitionSpeed = 1.0f;
 
-        [Tooltip("Duration of the ascending speedlines rush phase in seconds (at 1x speed).")]
-        public float diveDuration = 0.52f;
+        [Tooltip("Duration of the ascending launch transition in seconds (at 1x speed).")]
+        public float diveDuration = 0.65f;
 
-        [Tooltip("Duration of title & button launching downwards out of frame (at 1x speed).")]
-        public float fadeOutDuration = 0.22f;
-
-        [Tooltip("Duration of MenuOptionScreen swooping down into view (at 1x speed).")]
-        public float revealDuration = 0.25f;
-
-        [Tooltip("Duration of plummeting back down to Title Screen (at 1x speed).")]
-        public float backDuration = 0.42f;
+        [Tooltip("Duration of the descending return transition in seconds (at 1x speed).")]
+        public float backDuration = 0.60f;
 
         [Tooltip("Animation speed (FPS) for cycling through the Parallel V speedline frames.")]
         [Range(10f, 60f)]
@@ -44,10 +40,11 @@ namespace UI.MainMenuUI
         public CanvasGroup buttonGroup;
         public RectTransform backgroundTransform;
 
-        [Header("Speed Lines Overlay (Parallel V Transparent Blue)")]
+        [Header("Speed Lines Overlay & Dark Backdrop")]
         public GameObject speedLinesObject;
         public Image speedLinesImage;
         public CanvasGroup speedLinesGroup;
+        public Image darkBackdrop;
         public Sprite[] speedLineSprites;
 
         [Header("Menu Option Screen")]
@@ -107,18 +104,62 @@ namespace UI.MainMenuUI
                 if (menuOptionGroup != null) menuOptionGroup.alpha = 0f;
             }
 
-            if (speedLinesObject != null)
-            {
-                speedLinesObject.SetActive(false);
-                if (speedLinesGroup != null) speedLinesGroup.alpha = 0f;
-            }
-
+            SetupSpeedLinesAndBackdrop();
             HookBackButton();
         }
 
         private void Start()
         {
             HookBackButton();
+        }
+
+        private void SetupSpeedLinesAndBackdrop()
+        {
+            if (speedLinesObject == null) return;
+
+            if (speedLinesGroup == null)
+                speedLinesGroup = speedLinesObject.GetComponent<CanvasGroup>();
+
+            // Find or setup dark backdrop
+            if (darkBackdrop == null)
+            {
+                Transform dbTrans = speedLinesObject.transform.Find("DarkBackdrop");
+                if (dbTrans != null)
+                {
+                    darkBackdrop = dbTrans.GetComponent<Image>();
+                }
+            }
+
+            // If not found, create DarkBackdrop as first child (drawn behind speed lines)
+            if (darkBackdrop == null)
+            {
+                GameObject dbObj = new GameObject("DarkBackdrop", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                dbObj.transform.SetParent(speedLinesObject.transform, false);
+                dbObj.transform.SetAsFirstSibling();
+
+                RectTransform rt = dbObj.GetComponent<RectTransform>();
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.offsetMin = Vector2.zero;
+                rt.offsetMax = Vector2.zero;
+
+                darkBackdrop = dbObj.GetComponent<Image>();
+                darkBackdrop.color = new Color(0.04f, 0.05f, 0.09f, 0f);
+                darkBackdrop.raycastTarget = false;
+            }
+
+            if (speedLinesImage == null)
+            {
+                Transform slTrans = speedLinesObject.transform.Find("SpeedLines");
+                if (slTrans != null)
+                    speedLinesImage = slTrans.GetComponent<Image>();
+                else
+                    speedLinesImage = speedLinesObject.GetComponent<Image>();
+            }
+
+            speedLinesObject.SetActive(false);
+            if (speedLinesGroup != null) speedLinesGroup.alpha = 0f;
+            if (darkBackdrop != null) darkBackdrop.color = new Color(0.04f, 0.05f, 0.09f, 0f);
         }
 
         private void HookBackButton()
@@ -168,173 +209,157 @@ namespace UI.MainMenuUI
         }
 
         /// <summary>
-        /// NAIK KE ATAS:
-        /// 1. Button click punch & anticipation.
-        /// 2. Title & Button rocket downwards off screen (simulating rocket lift-off upwards).
-        /// 3. Blue transparent Parallel V speedlines stream down with surging ascent whoosh SFX.
-        ///    Background rushes downwards (-1400px) with subtle comic perspective.
-        /// 4. Menu Option Screen drops down from above (+750px -> 0px) with punchy comic bounce landing!
+        /// Smooth & Natural Ascending Transition (Title -> Menu Option):
+        /// - Semi-transparent at start (speed lines streak across dimmed UI).
+        /// - Dark comic contrast in the middle (full canvas coverage, no skybox leakage).
+        /// - Smoothly returns to semi-transparent as Menu Option screen settles from above.
         /// </summary>
         private IEnumerator TransitionToOptionRoutine()
         {
             _isTransitioning = true;
 
             float speedMult = Mathf.Max(0.05f, transitionSpeed);
-            float actualFadeOut = fadeOutDuration / speedMult;
-            float actualDive = diveDuration / speedMult;
-            float actualReveal = revealDuration / speedMult;
+            float duration = diveDuration / speedMult;
 
             // 1. Initial click punch & sound
             if (audioSynth != null) audioSynth.PlayConfirm();
-            if (buttonTransform != null) buttonTransform.localScale = _buttonInitialScale * 0.92f;
+            if (buttonTransform != null) buttonTransform.localScale = _buttonInitialScale * 0.94f;
 
             yield return new WaitForSecondsRealtime(0.04f / speedMult);
 
-            // 2. ASCENT LAUNCH: Title & Button rocket downwards off screen
             if (audioSynth != null) audioSynth.PlayAscendWhoosh();
 
-            float launchElapsed = 0f;
-            while (launchElapsed < actualFadeOut)
-            {
-                launchElapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(launchElapsed / actualFadeOut);
-                // Comic ease-in acceleration (falling fast)
-                float easeIn = t * t * t;
-
-                // Button drops down fast and fades
-                if (buttonTransform != null)
-                {
-                    buttonTransform.anchoredPosition = Vector2.Lerp(_buttonInitialPos, new Vector2(_buttonInitialPos.x, _buttonInitialPos.y - 800f), easeIn);
-                    buttonTransform.localScale = Vector3.Lerp(_buttonInitialScale, new Vector3(_buttonInitialScale.x * 0.8f, _buttonInitialScale.y * 1.3f, 1f), easeIn);
-                }
-                if (buttonGroup != null) buttonGroup.alpha = 1f - easeIn;
-
-                // Title container shoots downwards
-                if (titleTransform != null)
-                {
-                    titleTransform.anchoredPosition = Vector2.Lerp(_titleInitialPos, new Vector2(_titleInitialPos.x, _titleInitialPos.y - 1100f), easeIn);
-                    titleTransform.localScale = Vector3.Lerp(_titleInitialScale, new Vector3(_titleInitialScale.x * 0.85f, _titleInitialScale.y * 1.4f, 1f), easeIn);
-                }
-                if (titleGroup != null) titleGroup.alpha = 1f - easeIn;
-
-                yield return null;
-            }
-
-            if (buttonTransform != null) buttonTransform.gameObject.SetActive(false);
-            if (titleTransform != null) titleTransform.gameObject.SetActive(false);
-
-            // 3. HYPERSONIC ASCENT: Speed lines rush down, background drops fast
+            // 2. Activate SpeedLines overlay & initialize backdrop
             if (speedLinesObject != null)
             {
                 speedLinesObject.SetActive(true);
                 if (speedLinesGroup != null) speedLinesGroup.alpha = 0f;
             }
+            if (darkBackdrop != null)
+            {
+                darkBackdrop.color = new Color(0.04f, 0.05f, 0.09f, 0f);
+            }
 
-            float diveElapsed = 0f;
+            float elapsed = 0f;
             int totalSprites = (speedLineSprites != null) ? speedLineSprites.Length : 0;
             RectTransform speedLinesRect = speedLinesImage != null ? speedLinesImage.rectTransform : null;
 
-            while (diveElapsed < actualDive)
+            // Unified, continuous smooth timeline
+            while (elapsed < duration)
             {
-                diveElapsed += Time.deltaTime;
-                float progress = Mathf.Clamp01(diveElapsed / actualDive);
+                elapsed += Time.deltaTime;
+                float p = Mathf.Clamp01(elapsed / duration);
 
-                // Quick fade in for speedlines
+                // A. Overall SpeedLines Group Alpha
                 if (speedLinesGroup != null)
                 {
-                    if (progress < 0.15f)
-                        speedLinesGroup.alpha = progress / 0.15f;
+                    float slAlpha;
+                    if (p < 0.18f)
+                        slAlpha = Mathf.SmoothStep(0f, 1f, p / 0.18f);
+                    else if (p < 0.82f)
+                        slAlpha = 1f;
                     else
-                        speedLinesGroup.alpha = 1f;
+                        slAlpha = Mathf.SmoothStep(1f, 0f, (p - 0.82f) / 0.18f);
+
+                    speedLinesGroup.alpha = slAlpha;
                 }
 
-                // Background rushes violently DOWNWARDS (-1400px) with comic ease
-                // This gives the undeniable sensation of shooting UP into the sky!
+                // B. Dark Backdrop: Semi-transparent at start & end, dark in the middle
+                if (darkBackdrop != null)
+                {
+                    float darkAlpha;
+                    if (p < 0.35f)
+                    {
+                        // Awal: smooth rise from 0 to 0.98 (passes 0.40 semi-transparent at ~0.15)
+                        darkAlpha = Mathf.SmoothStep(0f, 0.98f, p / 0.35f);
+                    }
+                    else if (p < 0.65f)
+                    {
+                        // Tengah: peak dark comic coverage
+                        darkAlpha = 0.98f;
+                    }
+                    else
+                    {
+                        // Akhir: smooth fall from 0.98 back through 0.40 semi-transparent down to 0
+                        darkAlpha = Mathf.SmoothStep(0.98f, 0f, (p - 0.65f) / 0.35f);
+                    }
+                    darkBackdrop.color = new Color(0.04f, 0.05f, 0.09f, darkAlpha);
+                }
+
+                // C. Background Parallax (scales gently to 1.10x and drifts down 80px)
+                // Stays 100% within canvas boundaries!
                 if (backgroundTransform != null)
                 {
-                    float bgCurve = Mathf.SmoothStep(0f, 1f, progress);
-                    backgroundTransform.anchoredPosition = Vector2.Lerp(_bgInitialPos, new Vector2(_bgInitialPos.x, _bgInitialPos.y - 1350f), bgCurve);
-                    backgroundTransform.localScale = Vector3.Lerp(_bgInitialScale, _bgInitialScale * 1.25f, bgCurve);
+                    float bgT = Mathf.SmoothStep(0f, 1f, p);
+                    backgroundTransform.localScale = Vector3.Lerp(_bgInitialScale, _bgInitialScale * 1.10f, bgT);
+                    backgroundTransform.anchoredPosition = Vector2.Lerp(_bgInitialPos, new Vector2(_bgInitialPos.x, _bgInitialPos.y - 80f), bgT);
                 }
 
-                // Animated cycle through transparent blue Parallel V speedlines
+                // D. Title & Button: Smoothly glide down and fade out during first 38%
+                if (p < 0.38f)
+                {
+                    float outT = Mathf.SmoothStep(0f, 1f, p / 0.38f);
+                    if (titleTransform != null)
+                    {
+                        titleTransform.anchoredPosition = Vector2.Lerp(_titleInitialPos, new Vector2(_titleInitialPos.x, _titleInitialPos.y - 450f), outT);
+                        if (titleGroup != null) titleGroup.alpha = 1f - outT;
+                    }
+                    if (buttonTransform != null)
+                    {
+                        buttonTransform.anchoredPosition = Vector2.Lerp(_buttonInitialPos, new Vector2(_buttonInitialPos.x, _buttonInitialPos.y - 400f), outT);
+                        if (buttonGroup != null) buttonGroup.alpha = 1f - outT;
+                    }
+                }
+                else
+                {
+                    if (titleTransform != null && titleTransform.gameObject.activeSelf)
+                        titleTransform.gameObject.SetActive(false);
+                    if (buttonTransform != null && buttonTransform.gameObject.activeSelf)
+                        buttonTransform.gameObject.SetActive(false);
+                }
+
+                // E. MenuOptionScreen: Smoothly descends from +240px and settles naturally
+                if (p >= 0.55f)
+                {
+                    if (menuOptionScreenObject != null && !menuOptionScreenObject.activeSelf)
+                        menuOptionScreenObject.SetActive(true);
+
+                    float inT = (p - 0.55f) / 0.45f;
+                    float easeOut = 1f - Mathf.Pow(1f - inT, 2.8f);
+
+                    if (menuOptionTransform != null)
+                    {
+                        menuOptionTransform.anchoredPosition = Vector2.Lerp(new Vector2(_menuOptionInitialPos.x, _menuOptionInitialPos.y + 240f), _menuOptionInitialPos, easeOut);
+                    }
+                    if (menuOptionGroup != null)
+                    {
+                        menuOptionGroup.alpha = Mathf.SmoothStep(0f, 1f, inT);
+                    }
+                }
+
+                // F. Speedlines animation frame cycling
                 if (totalSprites > 0 && speedLinesImage != null)
                 {
-                    int frameIndex = Mathf.FloorToInt(diveElapsed * speedLineFps * speedMult) % totalSprites;
+                    int frameIndex = Mathf.FloorToInt(elapsed * speedLineFps * speedMult) % totalSprites;
                     speedLinesImage.sprite = speedLineSprites[frameIndex];
                 }
 
-                // Downward streaming vertical drift of speed lines (reinforcing upward camera flight)
+                // G. Smooth organic vertical drift
                 if (speedLinesRect != null)
                 {
-                    float yOffset = -(Mathf.Repeat(diveElapsed * 1600f * speedMult, 120f) - 60f);
-                    speedLinesRect.anchoredPosition = new Vector2(0f, yOffset);
-                }
-
-                // Comic hypersonic screen jitter
-                if (progress > 0.10f && progress < 0.88f)
-                {
-                    float jitterX = Random.Range(-5f, 5f);
-                    float jitterY = Random.Range(-6f, 6f);
-                    transform.localPosition = new Vector3(jitterX, jitterY, 0f);
-                }
-                else
-                {
-                    transform.localPosition = Vector3.zero;
+                    float driftY = Mathf.Sin(p * Mathf.PI * 4f) * 16f;
+                    speedLinesRect.anchoredPosition = new Vector2(0f, driftY);
                 }
 
                 yield return null;
             }
 
-            transform.localPosition = Vector3.zero;
+            // Final cleanup
+            if (speedLinesObject != null) speedLinesObject.SetActive(false);
+            if (darkBackdrop != null) darkBackdrop.color = new Color(0.04f, 0.05f, 0.09f, 0f);
             if (speedLinesRect != null) speedLinesRect.anchoredPosition = Vector2.zero;
 
-            // 4. ARRIVAL AT UPPER TIER: MenuOptionScreen enters from TOP (+750px -> 0px) with comic overshoot bounce
-            if (menuOptionScreenObject != null)
-            {
-                menuOptionScreenObject.SetActive(true);
-                if (menuOptionGroup != null) menuOptionGroup.alpha = 0f;
-            }
-
-            float revealElapsed = 0f;
-            Vector2 optionStartPos = new Vector2(_menuOptionInitialPos.x, _menuOptionInitialPos.y + 750f);
-
-            while (revealElapsed < actualReveal)
-            {
-                revealElapsed += Time.deltaTime;
-                float rt = Mathf.Clamp01(revealElapsed / actualReveal);
-
-                // Speed lines fade out
-                if (speedLinesGroup != null) speedLinesGroup.alpha = 1f - rt;
-                if (menuOptionGroup != null) menuOptionGroup.alpha = Mathf.Clamp01(rt * 1.5f);
-
-                // Comic overshoot curve: drops down fast, overshoots slightly below (-20px), bounces back to 0
-                float posCurve;
-                if (rt < 0.75f)
-                {
-                    float subT = rt / 0.75f;
-                    // Ease out plunge
-                    posCurve = 1f - Mathf.Pow(1f - subT, 2.5f);
-                    if (menuOptionTransform != null)
-                    {
-                        menuOptionTransform.anchoredPosition = Vector2.Lerp(optionStartPos, new Vector2(_menuOptionInitialPos.x, _menuOptionInitialPos.y - 25f), posCurve);
-                    }
-                }
-                else
-                {
-                    float subT = (rt - 0.75f) / 0.25f;
-                    // Snappy rebound back to initial 0
-                    float rebound = Mathf.Sin(subT * Mathf.PI * 0.5f);
-                    if (menuOptionTransform != null)
-                    {
-                        menuOptionTransform.anchoredPosition = Vector2.Lerp(new Vector2(_menuOptionInitialPos.x, _menuOptionInitialPos.y - 25f), _menuOptionInitialPos, rebound);
-                    }
-                }
-
-                yield return null;
-            }
-
-            if (speedLinesObject != null) speedLinesObject.SetActive(false);
+            if (menuOptionScreenObject != null) menuOptionScreenObject.SetActive(true);
             if (menuOptionGroup != null) menuOptionGroup.alpha = 1f;
             if (menuOptionTransform != null) menuOptionTransform.anchoredPosition = _menuOptionInitialPos;
 
@@ -349,12 +374,10 @@ namespace UI.MainMenuUI
         }
 
         /// <summary>
-        /// TURUN KE BAWAH:
-        /// 1. Option Screen shoots upwards (+800px) out of frame.
-        /// 2. Audio plays descending falling whoosh SFX.
-        /// 3. Speedlines rush upwards while background rushes back UP to initial position (0px).
-        /// 4. Title & Button plummet down from ABOVE (+950px) and slam down with a comic landing bounce!
-        /// 5. Heavy comic impact landing sound & screen shudder!
+        /// Smooth & Natural Descending Transition (Menu Option -> Title):
+        /// - Semi-transparent at start as Menu Option screen lifts up.
+        /// - Dark comic contrast in the middle as camera descends through speedlines.
+        /// - Smoothly returns to semi-transparent as Title & Button settle with a gentle cushion.
         /// </summary>
         private IEnumerator TransitionBackToTitleRoutine()
         {
@@ -362,171 +385,148 @@ namespace UI.MainMenuUI
             if (audioSynth != null) audioSynth.PlayCancel();
 
             float speedMult = Mathf.Max(0.05f, transitionSpeed);
-            float actualBack = backDuration / speedMult;
+            float duration = backDuration / speedMult;
 
-            // 1. Option Screen shoots UPWARDS (+800px) as camera falls downwards
-            float exitElapsed = 0f;
-            float exitDuration = 0.16f / speedMult;
-            Vector2 optionExitTarget = new Vector2(_menuOptionInitialPos.x, _menuOptionInitialPos.y + 800f);
-
-            while (exitElapsed < exitDuration)
-            {
-                exitElapsed += Time.deltaTime;
-                float et = Mathf.Clamp01(exitElapsed / exitDuration);
-                float easeIn = et * et;
-
-                if (menuOptionTransform != null)
-                {
-                    menuOptionTransform.anchoredPosition = Vector2.Lerp(_menuOptionInitialPos, optionExitTarget, easeIn);
-                }
-                if (menuOptionGroup != null)
-                {
-                    menuOptionGroup.alpha = 1f - easeIn;
-                }
-
-                yield return null;
-            }
-
-            if (menuOptionScreenObject != null) menuOptionScreenObject.SetActive(false);
-            if (menuOptionTransform != null) menuOptionTransform.anchoredPosition = _menuOptionInitialPos;
-
-            // 2. Play descending plummet whoosh & activate speedlines
             if (audioSynth != null) audioSynth.PlayDescendWhoosh();
 
+            // 1. Activate SpeedLines overlay & initialize backdrop
             if (speedLinesObject != null)
             {
                 speedLinesObject.SetActive(true);
-                if (speedLinesGroup != null) speedLinesGroup.alpha = 0.9f;
+                if (speedLinesGroup != null) speedLinesGroup.alpha = 0f;
             }
-
-            // Reactivate Title and Button at top position (above screen, ready to slam down)
-            Vector2 titleTopPos = new Vector2(_titleInitialPos.x, _titleInitialPos.y + 950f);
-            Vector2 buttonTopPos = new Vector2(_buttonInitialPos.x, _buttonInitialPos.y + 800f);
-
-            if (titleTransform != null)
+            if (darkBackdrop != null)
             {
-                titleTransform.gameObject.SetActive(true);
-                titleTransform.anchoredPosition = titleTopPos;
-                titleTransform.localScale = new Vector3(_titleInitialScale.x * 0.9f, _titleInitialScale.y * 1.35f, 1f);
-                if (titleGroup != null) titleGroup.alpha = 0.4f;
+                darkBackdrop.color = new Color(0.04f, 0.05f, 0.09f, 0f);
             }
 
-            if (buttonTransform != null)
-            {
-                buttonTransform.gameObject.SetActive(true);
-                buttonTransform.anchoredPosition = buttonTopPos;
-                buttonTransform.localScale = _buttonInitialScale;
-                if (buttonGroup != null) buttonGroup.alpha = 0.4f;
-            }
-
-            Vector3 currentBgScale = backgroundTransform != null ? backgroundTransform.localScale : _bgInitialScale;
-            Vector2 currentBgPos = backgroundTransform != null ? backgroundTransform.anchoredPosition : _bgInitialPos;
-
+            float elapsed = 0f;
             int totalSprites = (speedLineSprites != null) ? speedLineSprites.Length : 0;
             RectTransform speedLinesRect = speedLinesImage != null ? speedLinesImage.rectTransform : null;
 
-            float fallElapsed = 0f;
-            float fallDuration = actualBack * 0.70f;
+            bool landingSoundPlayed = false;
 
-            // 3. FALL PHASE: Background rushes back UP, Title & Button plummet down from above
-            while (fallElapsed < fallDuration)
+            while (elapsed < duration)
             {
-                fallElapsed += Time.deltaTime;
-                float ft = Mathf.Clamp01(fallElapsed / fallDuration);
-                // Heavy gravity acceleration ease-in
-                float fallCurve = ft * ft * ft;
+                elapsed += Time.deltaTime;
+                float p = Mathf.Clamp01(elapsed / duration);
 
-                // Background rushes back UP from -1350px to 0px
-                if (backgroundTransform != null)
+                // A. Overall SpeedLines Group Alpha
+                if (speedLinesGroup != null)
                 {
-                    float bgT = Mathf.SmoothStep(0f, 1f, ft);
-                    backgroundTransform.anchoredPosition = Vector2.Lerp(currentBgPos, _bgInitialPos, bgT);
-                    backgroundTransform.localScale = Vector3.Lerp(currentBgScale, _bgInitialScale, bgT);
+                    float slAlpha;
+                    if (p < 0.18f)
+                        slAlpha = Mathf.SmoothStep(0f, 1f, p / 0.18f);
+                    else if (p < 0.80f)
+                        slAlpha = 1f;
+                    else
+                        slAlpha = Mathf.SmoothStep(1f, 0f, (p - 0.80f) / 0.20f);
+
+                    speedLinesGroup.alpha = slAlpha;
                 }
 
-                // Speed lines cycle in reverse
+                // B. Dark Backdrop: Semi-transparent at start & end, dark in the middle
+                if (darkBackdrop != null)
+                {
+                    float darkAlpha;
+                    if (p < 0.35f)
+                    {
+                        darkAlpha = Mathf.SmoothStep(0f, 0.98f, p / 0.35f);
+                    }
+                    else if (p < 0.65f)
+                    {
+                        darkAlpha = 0.98f;
+                    }
+                    else
+                    {
+                        darkAlpha = Mathf.SmoothStep(0.98f, 0f, (p - 0.65f) / 0.35f);
+                    }
+                    darkBackdrop.color = new Color(0.04f, 0.05f, 0.09f, darkAlpha);
+                }
+
+                // C. MenuOptionScreen: Smoothly glides up (+320px) and fades out during first 38%
+                if (p < 0.38f)
+                {
+                    float outT = Mathf.SmoothStep(0f, 1f, p / 0.38f);
+                    if (menuOptionTransform != null)
+                    {
+                        menuOptionTransform.anchoredPosition = Vector2.Lerp(_menuOptionInitialPos, new Vector2(_menuOptionInitialPos.x, _menuOptionInitialPos.y + 320f), outT);
+                    }
+                    if (menuOptionGroup != null)
+                    {
+                        menuOptionGroup.alpha = 1f - outT;
+                    }
+                }
+                else
+                {
+                    if (menuOptionScreenObject != null && menuOptionScreenObject.activeSelf)
+                        menuOptionScreenObject.SetActive(false);
+                }
+
+                // D. Background Parallax Return
+                if (backgroundTransform != null)
+                {
+                    float bgT = Mathf.SmoothStep(0f, 1f, p);
+                    backgroundTransform.localScale = Vector3.Lerp(_bgInitialScale * 1.10f, _bgInitialScale, bgT);
+                    backgroundTransform.anchoredPosition = Vector2.Lerp(new Vector2(_bgInitialPos.x, _bgInitialPos.y - 80f), _bgInitialPos, bgT);
+                }
+
+                // E. Title & Button: Descend from +240px and settle with natural comic cushion
+                if (p >= 0.55f)
+                {
+                    if (titleTransform != null && !titleTransform.gameObject.activeSelf)
+                    {
+                        titleTransform.gameObject.SetActive(true);
+                        if (buttonTransform != null) buttonTransform.gameObject.SetActive(true);
+                    }
+
+                    float inT = (p - 0.55f) / 0.45f;
+                    float easeOut = 1f - Mathf.Pow(1f - inT, 2.6f);
+
+                    // Gentle cushion settle
+                    float cushion = (inT < 0.75f) ? 0f : Mathf.Sin((inT - 0.75f) / 0.25f * Mathf.PI) * -8f;
+
+                    if (titleTransform != null)
+                    {
+                        titleTransform.anchoredPosition = Vector2.Lerp(new Vector2(_titleInitialPos.x, _titleInitialPos.y + 240f), _titleInitialPos, easeOut) + new Vector2(0f, cushion);
+                        if (titleGroup != null) titleGroup.alpha = Mathf.SmoothStep(0f, 1f, inT);
+                    }
+
+                    if (buttonTransform != null)
+                    {
+                        buttonTransform.anchoredPosition = Vector2.Lerp(new Vector2(_buttonInitialPos.x, _buttonInitialPos.y + 200f), _buttonInitialPos, easeOut) + new Vector2(0f, cushion * 0.7f);
+                        if (buttonGroup != null) buttonGroup.alpha = Mathf.SmoothStep(0f, 1f, inT);
+                    }
+
+                    if (inT >= 0.80f && !landingSoundPlayed)
+                    {
+                        landingSoundPlayed = true;
+                        if (audioSynth != null) audioSynth.PlayLandingImpact();
+                    }
+                }
+
+                // F. Speedlines animation frame cycling in reverse
                 if (totalSprites > 0 && speedLinesImage != null)
                 {
-                    int frameIndex = Mathf.FloorToInt((fallDuration - fallElapsed) * speedLineFps * speedMult) % totalSprites;
+                    int frameIndex = Mathf.FloorToInt((duration - elapsed) * speedLineFps * speedMult) % totalSprites;
                     if (frameIndex < 0) frameIndex += totalSprites;
                     speedLinesImage.sprite = speedLineSprites[frameIndex];
                 }
 
-                // Upward drift of lines (falling down through them)
+                // G. Smooth organic vertical drift
                 if (speedLinesRect != null)
                 {
-                    float yOffset = Mathf.Repeat(fallElapsed * 1500f * speedMult, 120f) - 60f;
-                    speedLinesRect.anchoredPosition = new Vector2(0f, yOffset);
+                    float driftY = Mathf.Sin(p * Mathf.PI * 4f) * -16f;
+                    speedLinesRect.anchoredPosition = new Vector2(0f, driftY);
                 }
-
-                // Title drops from top towards landing point
-                if (titleTransform != null)
-                {
-                    titleTransform.anchoredPosition = Vector2.Lerp(titleTopPos, _titleInitialPos, fallCurve);
-                }
-                if (titleGroup != null) titleGroup.alpha = Mathf.Lerp(0.4f, 1f, ft);
-
-                // Button drops slightly trailing behind title
-                if (buttonTransform != null)
-                {
-                    float buttonT = Mathf.Clamp01(ft * 1.1f);
-                    buttonTransform.anchoredPosition = Vector2.Lerp(buttonTopPos, _buttonInitialPos, buttonT * buttonT);
-                }
-                if (buttonGroup != null) buttonGroup.alpha = Mathf.Lerp(0.4f, 1f, ft);
 
                 yield return null;
             }
 
-            // Hide speed lines as we make touchdown
+            // Final cleanup
             if (speedLinesObject != null) speedLinesObject.SetActive(false);
+            if (darkBackdrop != null) darkBackdrop.color = new Color(0.04f, 0.05f, 0.09f, 0f);
             if (speedLinesRect != null) speedLinesRect.anchoredPosition = Vector2.zero;
-
-            // 4. HERO SLAM LANDING: Heavy comic impact sound + squash & bounce!
-            if (audioSynth != null) audioSynth.PlayLandingImpact();
-
-            // Landing bounce routine (Title slams down past 0, squashes, bounces back up, settles)
-            float bounceElapsed = 0f;
-            float bounceDuration = actualBack * 0.35f;
-
-            while (bounceElapsed < bounceDuration)
-            {
-                bounceElapsed += Time.deltaTime;
-                float bt = Mathf.Clamp01(bounceElapsed / bounceDuration);
-
-                // Damped harmonic comic bounce curve
-                float bounceOffset = -35f * Mathf.Exp(-bt * 6f) * Mathf.Cos(bt * Mathf.PI * 3f);
-                float squashX = 1f + (0.12f * Mathf.Exp(-bt * 6f) * Mathf.Cos(bt * Mathf.PI * 3f));
-                float squashY = 1f - (0.15f * Mathf.Exp(-bt * 6f) * Mathf.Cos(bt * Mathf.PI * 3f));
-
-                if (titleTransform != null)
-                {
-                    titleTransform.anchoredPosition = new Vector2(_titleInitialPos.x, _titleInitialPos.y + bounceOffset);
-                    titleTransform.localScale = new Vector3(_titleInitialScale.x * squashX, _titleInitialScale.y * squashY, 1f);
-                }
-
-                if (buttonTransform != null)
-                {
-                    float btnBounce = bounceOffset * 0.6f;
-                    buttonTransform.anchoredPosition = new Vector2(_buttonInitialPos.x, _buttonInitialPos.y + btnBounce);
-                    buttonTransform.localScale = new Vector3(_buttonInitialScale.x * squashX, _buttonInitialScale.y * squashY, 1f);
-                }
-
-                // Comic impact landing camera shake
-                if (bt < 0.4f)
-                {
-                    float shake = (1f - (bt / 0.4f)) * 4f;
-                    transform.localPosition = new Vector3(Random.Range(-shake, shake), Random.Range(-shake, shake), 0f);
-                }
-                else
-                {
-                    transform.localPosition = Vector3.zero;
-                }
-
-                yield return null;
-            }
-
-            // Restore all initial values cleanly
-            transform.localPosition = Vector3.zero;
 
             if (backgroundTransform != null)
             {
@@ -538,6 +538,7 @@ namespace UI.MainMenuUI
             {
                 titleTransform.localScale = _titleInitialScale;
                 titleTransform.anchoredPosition = _titleInitialPos;
+                titleTransform.gameObject.SetActive(true);
             }
             if (titleGroup != null) titleGroup.alpha = 1f;
 
@@ -545,6 +546,7 @@ namespace UI.MainMenuUI
             {
                 buttonTransform.localScale = _buttonInitialScale;
                 buttonTransform.anchoredPosition = _buttonInitialPos;
+                buttonTransform.gameObject.SetActive(true);
             }
             if (buttonGroup != null) buttonGroup.alpha = 1f;
 
