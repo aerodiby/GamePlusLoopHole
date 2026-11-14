@@ -9,6 +9,12 @@ public class DimensionSwitchManager : MonoBehaviour
     public Camera cam3D;
     public Camera cam2D;
 
+    [Header("World / Level Roots")]
+    [Tooltip("Tarik objek Level_2D dari Hierarchy ke sini")]
+    public GameObject level2DRoot;
+    [Tooltip("Opsional: Tarik Proxy_2D jika ingin bayangan collider 2D juga hilang saat di Mode 3D")]
+    public Renderer proxy2DRenderer;
+
     [Header("Player 3D References")]
     public MonoBehaviour player3DController;
     public CharacterController player3DCharController;
@@ -22,38 +28,40 @@ public class DimensionSwitchManager : MonoBehaviour
     [Header("Auto-Size & Position Sync Settings")]
     public bool autoSyncPlayerSize = true;
     public bool matchWidthAndHeight = false;
-    
-    [Tooltip("Koordinat Z untuk bidang permainan 2D (default: 0)")]
     public float plane2DZ = 0f;
-
-    [Tooltip("Jika dicentang, saat pindah dari 2D ke 3D, posisi Z Player 3D juga ditarik ke bidang 2D (Z = 0). Jika tidak, Z Player 3D tetap di tempat terakhirnya.")]
     public bool snap3DToPlaneZOnSwitch = false;
+
+    // Menyimpan semua renderer yang ada di dalam Level_2D (Ground_2D, platform, dll)
+    private Renderer[] level2DRenderers;
 
     void Start()
     {
         if ((player3DRenderers == null || player3DRenderers.Length == 0) && player3DController != null)
-            player3DRenderers = player3DController.GetComponentsInChildren<Renderer>();
+            player3DRenderers = player3DController.GetComponentsInChildren<Renderer>(true);
 
         if ((player2DRenderers == null || player2DRenderers.Length == 0) && player2DController != null)
-            player2DRenderers = player2DController.GetComponentsInChildren<Renderer>();
+            player2DRenderers = player2DController.GetComponentsInChildren<Renderer>(true);
 
         if (player3DCharController == null && player3DController != null)
             player3DCharController = player3DController.GetComponent<CharacterController>();
+
+        // Ambil semua Renderer di dalam Level_2D (termasuk Ground_2D, platform, dekorasi 2D)
+        if (level2DRoot != null)
+        {
+            level2DRenderers = level2DRoot.GetComponentsInChildren<Renderer>(true);
+        }
 
         if (autoSyncPlayerSize)
         {
             SyncPlayerSizes();
         }
 
-        // Samakan posisi awal saat mulai game
         SyncPosition(currentMode == DimensionMode.Mode3D_FP);
-
         ApplyMode(currentMode);
     }
 
     void Update()
     {
-        // Sinkronisasi posisi X dan Y secara real-time mengikuti karakter yang sedang aktif
         if (currentMode == DimensionMode.Mode3D_FP)
         {
             Sync3DTo2D();
@@ -63,7 +71,6 @@ public class DimensionSwitchManager : MonoBehaviour
             Sync2DTo3D();
         }
 
-        // Tekan Tab untuk ganti mode
         if (Input.GetKeyDown(KeyCode.Tab))
         {
             currentMode = (currentMode == DimensionMode.Mode3D_FP) 
@@ -74,7 +81,6 @@ public class DimensionSwitchManager : MonoBehaviour
         }
     }
 
-    // Menyalin X dan Y dari Player 3D ke Player 2D
     void Sync3DTo2D()
     {
         if (player3DController == null || player2DController == null) return;
@@ -83,7 +89,6 @@ public class DimensionSwitchManager : MonoBehaviour
         player2DController.transform.position = new Vector3(pos3D.x, pos3D.y, plane2DZ);
     }
 
-    // Menyalin X dan Y dari Player 2D ke Player 3D
     void Sync2DTo3D()
     {
         if (player3DController == null || player2DController == null) return;
@@ -93,7 +98,6 @@ public class DimensionSwitchManager : MonoBehaviour
 
         float targetZ = snap3DToPlaneZOnSwitch ? plane2DZ : pos3D.z;
 
-        // Matikan CharacterController sementara agar transform.position tidak di-override
         bool wasCCEnabled = false;
         if (player3DCharController != null && player3DCharController.enabled)
         {
@@ -150,7 +154,6 @@ public class DimensionSwitchManager : MonoBehaviour
     {
         bool is3D = (mode == DimensionMode.Mode3D_FP);
 
-        // Pastikan posisi tersinkronisasi tepat sebelum berganti kontrol
         if (is3D)
         {
             Sync2DTo3D();
@@ -161,26 +164,33 @@ public class DimensionSwitchManager : MonoBehaviour
             if (player2DRb != null) player2DRb.linearVelocity = Vector2.zero;
         }
 
-        // Toggle Kamera
+        // 1. Toggle Kamera
         cam3D.enabled = is3D;
         cam2D.enabled = !is3D;
 
-        // Toggle Controller & CharacterController 3D
+        // 2. Toggle Controller
         if (player3DController != null) player3DController.enabled = is3D;
         if (player3DCharController != null) player3DCharController.enabled = is3D;
         if (player2DController != null) player2DController.enabled = !is3D;
 
-        // Toggle Visibilitas Renderer
+        // 3. Sembunyikan / Tampilkan seluruh isi Level_2D (Ground_2D, Platform 2D, Player_2D)
+        SetRenderersVisible(level2DRenderers, !is3D);
         SetRenderersVisible(player3DRenderers, is3D);
         SetRenderersVisible(player2DRenderers, !is3D);
 
-        // Toggle Simulasi Rigidbody2D
+        // Opsional: Sembunyikan juga sprite bayangan Proxy_2D saat di Mode 3D jika diisi
+        if (proxy2DRenderer != null)
+        {
+            proxy2DRenderer.enabled = !is3D;
+        }
+
+        // 4. Toggle Simulasi Fisika 2D
         if (player2DRb != null)
         {
             player2DRb.simulated = !is3D;
         }
 
-        // Pengaturan Kursor
+        // 5. Pengaturan Kursor
         Cursor.lockState = is3D ? CursorLockMode.Locked : CursorLockMode.None;
         Cursor.visible = !is3D;
     }
