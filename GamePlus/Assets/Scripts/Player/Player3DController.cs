@@ -22,7 +22,7 @@ public class Player3DController : MonoBehaviour
 
     private CharacterController controller;
     private Vector3 velocity;
-    
+
     // Variabel untuk sistem Grab/Push
     private Rigidbody grabbedBox;
     private float currentHoldDistance;
@@ -100,13 +100,27 @@ public class Player3DController : MonoBehaviour
                 currentHoldDistance = Mathf.Clamp(currentHoldDistance + scroll * 2f, 1.5f, interactRange + 2f);
             }
         }
+
     }
 
     void TryGrabBox()
     {
+        if (playerCamera == null) return;
+
         Ray ray = new Ray(playerCamera.position, playerCamera.forward);
-        if (Physics.Raycast(ray, out RaycastHit hit, interactRange))
+
+        // Gunakan QueryTriggerInteraction.Collide agar Cartridge3D yang pakai Is Trigger tetap kena
+        if (Physics.Raycast(ray, out RaycastHit hit, interactRange, ~0, QueryTriggerInteraction.Collide))
         {
+            // 1. Cek apakah objek yang terkena Raycast punya IInteractable (seperti Cartridge3D / Tombol)
+            IInteractable interactable = hit.collider.GetComponentInParent<IInteractable>();
+            if (interactable != null)
+            {
+                interactable.Interact();
+                return;
+            }
+
+            // 2. Cek apakah objek yang terkena Raycast adalah Box yang bisa didorong
             if (hit.collider.CompareTag(pushableTag) && hit.rigidbody != null)
             {
                 grabbedBox = hit.rigidbody;
@@ -133,7 +147,7 @@ public class Player3DController : MonoBehaviour
     void MoveGrabbedBox()
     {
         Vector3 targetPoint = playerCamera.position + playerCamera.forward * currentHoldDistance;
-        
+
         // Jaga agar ketinggian (Y) box tetap stabil di lantai saat digeser
         targetPoint.y = lockedBoxY;
 
