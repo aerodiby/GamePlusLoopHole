@@ -16,6 +16,7 @@ namespace UI.MainMenuUI
         [Header("References")]
         public GameObject pressAnyButtonObject;
         public MainMenuUIAudioSynthesizer audioSynth;
+        public MainMenuUITransition transition;
 
         [Header("Events")]
         public UnityEvent onButtonPressed;
@@ -28,10 +29,16 @@ namespace UI.MainMenuUI
             {
                 _buttonComponent = pressAnyButtonObject.GetComponent<MainMenuUIButton>();
             }
+            if (transition == null)
+            {
+                transition = GetComponent<MainMenuUITransition>();
+            }
         }
 
         private void Update()
         {
+            if (transition != null && transition.isInOptionScreen) return;
+
             if (CheckAnyInputDown())
             {
                 OnPressAnyButtonActivated();
@@ -62,15 +69,24 @@ namespace UI.MainMenuUI
 
         public void OnPressAnyButtonActivated()
         {
+            if (transition != null && transition.isInOptionScreen) return;
+
             Debug.Log("[MainMenuUI] 'Press Any Button' activated!");
 
-            if (_buttonComponent != null)
+            if (transition != null)
             {
-                _buttonComponent.TriggerClickEffect();
+                transition.StartTransitionToOption();
             }
-            else if (audioSynth != null)
+            else
             {
-                audioSynth.PlayConfirm();
+                if (_buttonComponent != null)
+                {
+                    _buttonComponent.TriggerClickEffect();
+                }
+                else if (audioSynth != null)
+                {
+                    audioSynth.PlayConfirm();
+                }
             }
 
             onButtonPressed?.Invoke();
