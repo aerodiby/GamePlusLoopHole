@@ -991,6 +991,7 @@ MonoBehaviour:
   buttonText: {fileID: 147259265}
   accentTab: {fileID: 0}
   audioSynth: {fileID: 479061829}
+  mainController: {fileID: 0}
   swapColorsOnHover: 1
   normalTextColor: {r: 1, g: 1, b: 1, a: 1}
   hoverTextColor: {r: 0, g: 0, b: 0, a: 1}
@@ -3641,7 +3642,7 @@ MonoBehaviour:
     m_SelectOnDown: {fileID: 0}
     m_SelectOnLeft: {fileID: 0}
     m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
+  m_Transition: 0
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 1, g: 1, b: 0.9, a: 1}
@@ -3740,6 +3741,7 @@ MonoBehaviour:
   buttonText: {fileID: 978224033}
   accentTab: {fileID: 0}
   audioSynth: {fileID: 479061829}
+  mainController: {fileID: 479061830}
   swapColorsOnHover: 0
   normalTextColor: {r: 1, g: 1, b: 1, a: 1}
   hoverTextColor: {r: 0, g: 0, b: 0, a: 1}

@@ -58,6 +58,7 @@ namespace UI.MainMenuUI
 
         [Header("State")]
         public bool isInOptionScreen = false;
+        public bool IsTransitioning => _isTransitioning;
         private bool _isTransitioning = false;
 
         // Cached original transforms

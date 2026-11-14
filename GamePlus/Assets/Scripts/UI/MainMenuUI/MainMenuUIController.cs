@@ -9,8 +9,11 @@ using UnityEngine.InputSystem;
 
 namespace UI.MainMenuUI
 {
+    /// <summary>
     /// Master controller for the MainMenuUI Title Screen.
-    /// Handles "Press Any Button" input, audio triggers, and click effects.
+    /// Handles "Press Any Button" input, audio triggers, and clean single-fire activation.
+    /// Prevents double-clicking or input race conditions between mouse and EventSystem.
+    /// </summary>
     public class MainMenuUIController : MonoBehaviour
     {
         [Header("References")]
@@ -22,6 +25,7 @@ namespace UI.MainMenuUI
         public UnityEvent onButtonPressed;
 
         private MainMenuUIButton _buttonComponent;
+        private bool _hasTriggered = false;
 
         private void Start()
         {
@@ -37,9 +41,22 @@ namespace UI.MainMenuUI
 
         private void Update()
         {
-            if (transition != null && transition.isInOptionScreen) return;
+            if (transition != null && (transition.isInOptionScreen || transition.IsTransitioning))
+            {
+                return;
+            }
 
-            if (CheckAnyInputDown())
+            // Reset single-fire guard when safely back in Title Screen
+            if (_hasTriggered && transition != null && !transition.isInOptionScreen && !transition.IsTransitioning)
+            {
+                _hasTriggered = false;
+                if (_buttonComponent != null)
+                {
+                    _buttonComponent.SetLocked(false);
+                }
+            }
+
+            if (!_hasTriggered && CheckAnyInputDown())
             {
                 OnPressAnyButtonActivated();
             }
@@ -69,9 +86,18 @@ namespace UI.MainMenuUI
 
         public void OnPressAnyButtonActivated()
         {
-            if (transition != null && transition.isInOptionScreen) return;
+            if (_hasTriggered) return;
+            if (transition != null && (transition.isInOptionScreen || transition.IsTransitioning)) return;
 
-            Debug.Log("[MainMenuUI] 'Press Any Button' activated!");
+            _hasTriggered = true;
+
+            // Lock button component so hover/exit won't fight with the transition
+            if (_buttonComponent != null)
+            {
+                _buttonComponent.SetLocked(true);
+            }
+
+            Debug.Log("[MainMenuUI] 'Press Any Button' activated cleanly!");
 
             if (transition != null)
             {
@@ -81,7 +107,7 @@ namespace UI.MainMenuUI
             {
                 if (_buttonComponent != null)
                 {
-                    _buttonComponent.TriggerClickEffect();
+                    _buttonComponent.TriggerClickEffect(playAudio: true);
                 }
                 else if (audioSynth != null)
                 {
