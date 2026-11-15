@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using TMPro;
 
 #if ENABLE_INPUT_SYSTEM
@@ -81,6 +82,11 @@ namespace UI.MainMenuUI
         public Color textSelectedColor = new Color(0.08f, 0.04f, 0.16f, 1f); // Deep obsidian black
         public float highlightMoveSpeed = 24f;
         public float punchScaleMultiplier = 1.05f;
+
+        [Header("Gameplay Scene Loading")]
+        [Tooltip("Name of the scene to load when selecting Play / Continue / New Game")]
+        public string gameplaySceneName = "SampleScene";
+        public bool autoLoadSceneOnPlay = true;
 
         [Header("Audio & Transitions")]
         public MainMenuUIAudioSynthesizer audioSynth;
@@ -171,37 +177,7 @@ namespace UI.MainMenuUI
 
         private void Start()
         {
-            // Setup default callbacks if not wired in inspector
-            SetupDefaultCallbacks();
             SnapToSelection(_currentIndex);
-        }
-
-        private void SetupDefaultCallbacks()
-        {
-            if (options.Count > 0 && options[0].onExecute.GetPersistentEventCount() == 0)
-                options[0].onExecute.AddListener(() => Debug.Log("[ActionMenu] Continue selected."));
-
-            if (options.Count > 1 && options[1].onExecute.GetPersistentEventCount() == 0)
-                options[1].onExecute.AddListener(() => Debug.Log("[ActionMenu] New Game selected."));
-
-            if (options.Count > 2 && options[2].onExecute.GetPersistentEventCount() == 0)
-                options[2].onExecute.AddListener(() => Debug.Log("[ActionMenu] Options selected."));
-
-            if (options.Count > 3 && options[3].onExecute.GetPersistentEventCount() == 0)
-                options[3].onExecute.AddListener(() => Debug.Log("[ActionMenu] Bethesda.net selected."));
-
-            if (options.Count > 4 && options[4].onExecute.GetPersistentEventCount() == 0)
-            {
-                options[4].onExecute.AddListener(() =>
-                {
-                    Debug.Log("[ActionMenu] Exit Game selected.");
-#if UNITY_EDITOR
-                    UnityEditor.EditorApplication.isPlaying = false;
-#else
-                    Application.Quit();
-#endif
-                });
-            }
         }
 
         private void Update()
@@ -435,8 +411,67 @@ namespace UI.MainMenuUI
 
             if (_currentIndex >= 0 && _currentIndex < options.Count)
             {
-                Debug.Log($"[ActionMenu] Activated: {options[_currentIndex].title}");
-                options[_currentIndex].onExecute?.Invoke();
+                var opt = options[_currentIndex];
+                Debug.Log($"[ActionMenu] Activated: {opt.title}");
+
+                // 1. If custom Inspector callback is wired, run it
+                if (opt.onExecute != null && opt.onExecute.GetPersistentEventCount() > 0)
+                {
+                    opt.onExecute.Invoke();
+                    return;
+                }
+
+                // 2. Default actions based on title keyword
+                string titleLower = !string.IsNullOrEmpty(opt.title) ? opt.title.Trim().ToLowerInvariant() : "";
+
+                if (autoLoadSceneOnPlay && (titleLower.Contains("play") || titleLower.Contains("start") || titleLower.Contains("new") || titleLower.Contains("continue")))
+                {
+                    StartCoroutine(LoadGameplaySceneRoutine());
+                }
+                else if (titleLower.Contains("exit") || titleLower.Contains("quit"))
+                {
+                    Debug.Log("[ActionMenu] Exiting application...");
+#if UNITY_EDITOR
+                    UnityEditor.EditorApplication.isPlaying = false;
+#else
+                    Application.Quit();
+#endif
+                }
+                else if (titleLower.Contains("option") || titleLower.Contains("config") || titleLower.Contains("setting"))
+                {
+                    Debug.Log("[ActionMenu] Options screen requested.");
+                    opt.onExecute?.Invoke();
+                }
+                else if (titleLower.Contains("credit"))
+                {
+                    Debug.Log("[ActionMenu] Credits screen requested.");
+                    opt.onExecute?.Invoke();
+                }
+                else
+                {
+                    opt.onExecute?.Invoke();
+                }
+            }
+        }
+
+        private IEnumerator LoadGameplaySceneRoutine()
+        {
+            // Brief comic pause for audio confirm sound
+            yield return new WaitForSecondsRealtime(0.18f);
+
+            if (!string.IsNullOrEmpty(gameplaySceneName) && Application.CanStreamedLevelBeLoaded(gameplaySceneName))
+            {
+                Debug.Log($"[ActionMenu] Loading gameplay scene: '{gameplaySceneName}'...");
+                SceneManager.LoadScene(gameplaySceneName);
+            }
+            else if (SceneManager.sceneCountInBuildSettings > 1)
+            {
+                Debug.Log("[ActionMenu] Loading gameplay scene at build index 1...");
+                SceneManager.LoadScene(1);
+            }
+            else
+            {
+                Debug.LogWarning($"[ActionMenu] Scene '{gameplaySceneName}' is not in Build Settings! Please add it under File -> Build Settings.");
             }
         }
 

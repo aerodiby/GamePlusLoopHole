@@ -165,9 +165,15 @@ namespace UI.MainMenuUI
 
         private void HookBackButton()
         {
+            // Only hook if an explicit "Button_Back" child exists.
+            // DO NOT use GetComponentInChildren<Button> as it will accidentally grab the first menu option button (e.g. Play)!
             if (backButton == null && menuOptionScreenObject != null)
             {
-                backButton = menuOptionScreenObject.GetComponentInChildren<Button>(true);
+                Transform bb = menuOptionScreenObject.transform.Find("Button_Back");
+                if (bb != null)
+                {
+                    backButton = bb.GetComponent<Button>();
+                }
             }
 
             if (backButton != null)
