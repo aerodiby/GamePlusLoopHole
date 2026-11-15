@@ -7579,7 +7579,7 @@ MonoBehaviour:
   slantSlope: 0.05253
   slantIntercept: -173.89
   leftBorderPinOffset: 159.3
-  gameplaySceneName: SampleScene
+  gameplaySceneName: Prototype
   autoLoadSceneOnPlay: 1
   audioSynth: {fileID: 479061829}
   transition: {fileID: 479061831}
