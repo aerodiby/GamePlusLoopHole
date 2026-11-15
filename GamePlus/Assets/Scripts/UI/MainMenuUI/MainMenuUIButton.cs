@@ -6,11 +6,9 @@ using TMPro;
 
 namespace UI.MainMenuUI
 {
-    /// <summary>
     /// Interactive comic button styled for MainMenuUI.
     /// Provides hover effect (scale, color swap, hover sound) and click effect (punch scale, confirm sound).
     /// Prevents double-clicking and visual fighting when transitions are running.
-    /// </summary>
     public class MainMenuUIButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, ISelectHandler, IDeselectHandler, IPointerClickHandler
     {
         [Header("References")]

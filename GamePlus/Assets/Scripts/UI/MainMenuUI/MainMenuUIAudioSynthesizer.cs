@@ -2,11 +2,9 @@ using UnityEngine;
 
 namespace UI.MainMenuUI
 {
-    /// <summary>
     /// Procedurally synthesizes high-energy comic UI sound effects
     /// (punchy confirm, crisp hover, ascending rocket whoosh, descending plummet whoosh, heavy landing impact)
     /// without requiring external audio asset dependencies.
-    /// </summary>
     public class MainMenuUIAudioSynthesizer : MonoBehaviour
     {
         private AudioSource _audioSource;

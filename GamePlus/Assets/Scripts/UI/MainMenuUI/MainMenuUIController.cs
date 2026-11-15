@@ -9,11 +9,8 @@ using UnityEngine.InputSystem;
 
 namespace UI.MainMenuUI
 {
-    /// <summary>
     /// Master controller for the MainMenuUI Title Screen.
     /// Handles "Press Any Button" input, audio triggers, and clean single-fire activation.
-    /// Prevents double-clicking or input race conditions between mouse and EventSystem.
-    /// </summary>
     public class MainMenuUIController : MonoBehaviour
     {
         [Header("References")]

@@ -8,14 +8,7 @@ using UnityEngine.InputSystem;
 
 namespace UI.MainMenuUI
 {
-    /// <summary>
-    /// Master transition controller for the Hi-Fi Rush comic UI.
-    /// Features:
-    /// - Smooth, natural choreography with continuous acceleration/deceleration.
-    /// - Semi-transparent speedline intro & outro with deep dark comic peak in the middle.
-    /// - 100% Canvas coverage (no 3D scene/skybox leaks).
-    /// - Fluid "Naik ke Atas" (Ascending) and "Turun ke Bawah" (Descending) transitions.
-    /// </summary>
+    /// Master transition controller for the UI.
     public class MainMenuUITransition : MonoBehaviour
     {
         [Header("Transition Speed & Timing Settings")]
@@ -52,6 +45,8 @@ namespace UI.MainMenuUI
         public CanvasGroup menuOptionGroup;
         public RectTransform menuOptionTransform;
         public Button backButton;
+        [Tooltip("Distance in pixels the menu card slides in from the left.")]
+        public float menuSlideDistance = 950f;
 
         [Header("Audio")]
         public MainMenuUIAudioSynthesizer audioSynth;
@@ -95,8 +90,14 @@ namespace UI.MainMenuUI
 
             if (menuOptionScreenObject != null)
             {
-                if (menuOptionTransform == null)
-                    menuOptionTransform = menuOptionScreenObject.GetComponent<RectTransform>();
+                if (menuOptionTransform == null || menuOptionTransform.gameObject == menuOptionScreenObject)
+                {
+                    Transform card = menuOptionScreenObject.transform.Find("ActionMenuCard");
+                    if (card != null)
+                        menuOptionTransform = card.GetComponent<RectTransform>();
+                    else
+                        menuOptionTransform = menuOptionScreenObject.GetComponent<RectTransform>();
+                }
 
                 if (menuOptionTransform != null)
                     _menuOptionInitialPos = menuOptionTransform.anchoredPosition;
@@ -200,7 +201,7 @@ namespace UI.MainMenuUI
         {
 #if ENABLE_INPUT_SYSTEM
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) return true;
-            if (Gamepad.current != null && (Gamepad.current.buttonEast.wasPressedThisFrame || 
+            if (Gamepad.current != null && (Gamepad.current.buttonEast.wasPressedThisFrame ||
                                            Gamepad.current.selectButton.wasPressedThisFrame ||
                                            Gamepad.current.bButton.wasPressedThisFrame)) return true;
             return false;
@@ -324,18 +325,23 @@ namespace UI.MainMenuUI
                         buttonTransform.gameObject.SetActive(false);
                 }
 
-                // E. MenuOptionScreen: Smoothly descends from +240px and settles naturally
-                if (p >= 0.55f)
+                // E. MenuOptionScreen: Smoothly slides in from left to right with comic deceleration & cushion
+                if (p >= 0.45f)
                 {
                     if (menuOptionScreenObject != null && !menuOptionScreenObject.activeSelf)
                         menuOptionScreenObject.SetActive(true);
 
-                    float inT = (p - 0.55f) / 0.45f;
-                    float easeOut = 1f - Mathf.Pow(1f - inT, 2.8f);
+                    float inT = (p - 0.45f) / 0.55f;
+                    float easeOut = 1f - Mathf.Pow(1f - inT, 3.2f);
+
+                    // Subtle organic comic overshoot settle (overshoots ~12px then settles cleanly)
+                    float cushion = (inT < 0.85f) ? Mathf.Sin(inT / 0.85f * Mathf.PI) * 12f : 0f;
 
                     if (menuOptionTransform != null)
                     {
-                        menuOptionTransform.anchoredPosition = Vector2.Lerp(new Vector2(_menuOptionInitialPos.x, _menuOptionInitialPos.y + 240f), _menuOptionInitialPos, easeOut);
+                        float startX = _menuOptionInitialPos.x - menuSlideDistance;
+                        float curX = Mathf.Lerp(startX, _menuOptionInitialPos.x, easeOut) + cushion;
+                        menuOptionTransform.anchoredPosition = new Vector2(curX, _menuOptionInitialPos.y);
                     }
                     if (menuOptionGroup != null)
                     {
@@ -450,17 +456,21 @@ namespace UI.MainMenuUI
                     darkBackdrop.color = new Color(0.04f, 0.05f, 0.09f, darkAlpha);
                 }
 
-                // C. MenuOptionScreen: Smoothly glides up (+320px) and fades out during first 38%
-                if (p < 0.38f)
+                // C. MenuOptionScreen: Smoothly slides out from right to left and fades out
+                if (p < 0.42f)
                 {
-                    float outT = Mathf.SmoothStep(0f, 1f, p / 0.38f);
+                    float outT = p / 0.42f;
+                    float easeIn = Mathf.Pow(outT, 2.4f);
+
                     if (menuOptionTransform != null)
                     {
-                        menuOptionTransform.anchoredPosition = Vector2.Lerp(_menuOptionInitialPos, new Vector2(_menuOptionInitialPos.x, _menuOptionInitialPos.y + 320f), outT);
+                        float targetX = _menuOptionInitialPos.x - menuSlideDistance;
+                        float curX = Mathf.Lerp(_menuOptionInitialPos.x, targetX, easeIn);
+                        menuOptionTransform.anchoredPosition = new Vector2(curX, _menuOptionInitialPos.y);
                     }
                     if (menuOptionGroup != null)
                     {
-                        menuOptionGroup.alpha = 1f - outT;
+                        menuOptionGroup.alpha = Mathf.SmoothStep(1f, 0f, outT);
                     }
                 }
                 else
@@ -555,6 +565,11 @@ namespace UI.MainMenuUI
                 buttonTransform.gameObject.SetActive(true);
             }
             if (buttonGroup != null) buttonGroup.alpha = 1f;
+
+            if (menuOptionTransform != null)
+            {
+                menuOptionTransform.anchoredPosition = _menuOptionInitialPos;
+            }
 
             isInOptionScreen = false;
             _isTransitioning = false;

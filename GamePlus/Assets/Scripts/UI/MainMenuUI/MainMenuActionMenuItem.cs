@@ -3,10 +3,8 @@ using UnityEngine.EventSystems;
 
 namespace UI.MainMenuUI
 {
-    /// <summary>
     /// Helper component on each Action Menu button row for instant PointerEnter (hover)
-    /// and PointerClick response matching the Hi-Fi Rush UI behavior.
-    /// </summary>
+    /// and PointerClick response matching the UI behavior.
     public class MainMenuActionMenuItem : MonoBehaviour, IPointerEnterHandler, IPointerClickHandler
     {
         public int index;

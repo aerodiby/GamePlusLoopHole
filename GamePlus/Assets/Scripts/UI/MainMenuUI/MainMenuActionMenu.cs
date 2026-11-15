@@ -23,16 +23,6 @@ namespace UI.MainMenuUI
         public UnityEvent onExecute;
     }
 
-    /// <summary>
-    /// Hi-Fi Rush styled Main Menu Action Screen.
-    /// Implements:
-    /// - Angled action card container with custom UI assets (Action Menu.png).
-    /// - Dynamic sliding selection highlight banner (Select.png).
-    /// - Active text color shift (selected = comic black, unselected = punchy white with dark outline).
-    /// - Dynamic bottom description ticker box for each option.
-    /// - Complete Gamepad (D-pad/Stick/A/B), Keyboard (WASD/Arrows/Enter/Esc), and Mouse (Hover/Click) navigation.
-    /// - Seamless transition back to Title Screen via MainMenuUITransition.
-    /// </summary>
     public class MainMenuActionMenu : MonoBehaviour
     {
         [Header("Menu Configuration")]
@@ -488,9 +478,7 @@ namespace UI.MainMenuUI
             }
         }
 
-        /// <summary>
         /// Called when the mouse hovers over a button item.
-        /// </summary>
         public void OnButtonHover(int index)
         {
             if (transition != null && transition.IsTransitioning) return;
@@ -499,9 +487,7 @@ namespace UI.MainMenuUI
             SelectIndex(index, playSound: true, punch: true);
         }
 
-        /// <summary>
         /// Called when a button item is clicked.
-        /// </summary>
         public void OnButtonClick(int index)
         {
             if (transition != null && transition.IsTransitioning) return;
