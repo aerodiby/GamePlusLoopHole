@@ -8,50 +8,65 @@ public class Player2DController : MonoBehaviour
     public float jumpForce = 12f;
 
     [Header("Ground Check Settings")]
-    [Tooltip("Biarkan Default/Everything, script otomatis mengabaikan collider Player sendiri")]
-    public LayerMask groundLayer = ~0; // Default: Everything
+    public LayerMask groundLayer = ~0;
     public float groundCheckDistance = 0.1f;
+
+    [Header("Animation Reference")]
+    [Tooltip("Biarkan kosong jika Animator dipasang langsung di Player_2D")]
+    public Animator animator;
+
+    // Nama Parameter di Window Animator (Harus sama persis tulisannya)
+    private static readonly int SpeedHash = Animator.StringToHash("Speed");
+    private static readonly int YVelocityHash = Animator.StringToHash("YVelocity");
+    private static readonly int IsGroundedHash = Animator.StringToHash("IsGrounded");
 
     private Rigidbody2D rb;
     private Collider2D col;
     private float moveInput;
-    [SerializeField] private bool isGrounded; // Ditampilkan di Inspector untuk debug
+    [SerializeField] private bool isGrounded;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<Collider2D>();
         rb.freezeRotation = true;
+
+        // Otomatis cari komponen Animator di objek ini atau child-nya
+        if (animator == null)
+        {
+            animator = GetComponentInChildren<Animator>();
+        }
     }
 
     void Update()
     {
         moveInput = Input.GetAxisRaw("Horizontal");
 
-        // Deteksi tanah otomatis dari titik paling bawah Collider Player_2D
+        // 1. Cek apakah kaki menyentuh tanah / Proxy_2D
         CheckGround();
 
-        // Lompat dengan Spasi atau W
+        // 2. Input Lompat
         if ((Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.W)) && isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
 
-        // Flip arah hadap
+        // 3. Balik arah hadap sprite (Flip Kiri / Kanan)
         if (moveInput > 0.01f)
             transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, 1f);
         else if (moveInput < -0.01f)
             transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, 1f);
+
+        // 4. Update Parameter Animasi
+        UpdateAnimations();
     }
 
     void CheckGround()
     {
-        // Ambil titik tengah bawah dari Collider2D milik Player_2D
         Bounds bounds = col.bounds;
         Vector2 footPosition = new Vector2(bounds.center.x, bounds.min.y);
         Vector2 boxSize = new Vector2(bounds.size.x * 0.8f, groundCheckDistance);
 
-        // Cek semua collider di bawah kaki, kecuali collider milik Player_2D sendiri
         Collider2D[] hits = Physics2D.OverlapBoxAll(footPosition, boxSize, 0f, groundLayer);
         isGrounded = false;
 
@@ -65,10 +80,20 @@ public class Player2DController : MonoBehaviour
         }
     }
 
+    void UpdateAnimations()
+    {
+        if (animator == null) return;
+
+        animator.SetFloat(SpeedHash, Mathf.Abs(moveInput));
+        animator.SetFloat(YVelocityHash, rb.linearVelocity.y);
+        animator.SetBool(IsGroundedHash, isGrounded);
+    }
+
     void FixedUpdate()
     {
         rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
 
+        // Kunci posisi Z tetap di bidang 0
         if (transform.position.z != 0f)
         {
             transform.position = new Vector3(transform.position.x, transform.position.y, 0f);
@@ -78,5 +103,13 @@ public class Player2DController : MonoBehaviour
     void OnDisable()
     {
         if (rb != null) rb.linearVelocity = Vector2.zero;
+
+        // Reset ke animasi Idle saat pindah ke Mode 3D
+        if (animator != null)
+        {
+            animator.SetFloat(SpeedHash, 0f);
+            animator.SetFloat(YVelocityHash, 0f);
+            animator.SetBool(IsGroundedHash, true);
+        }
     }
 }
