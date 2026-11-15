@@ -71,10 +71,6 @@ namespace UI.MainMenuUI
             if (starAnimation != null)
             {
                 starAnimation.SetLocked(locked);
-                if (!locked)
-                {
-                    starAnimation.ResetToHome();
-                }
             }
         }
 
@@ -153,6 +149,16 @@ namespace UI.MainMenuUI
             }
         }
 
+        public void SetButtonDepressed(bool depressed)
+        {
+            if (_clickAnimRoutine != null)
+            {
+                StopCoroutine(_clickAnimRoutine);
+                _clickAnimRoutine = null;
+            }
+            transform.localScale = _baseScale * (depressed ? clickDownScale : (_isHovered ? hoverScale : 1f));
+        }
+
         public void TriggerPunchReaction()
         {
             if (_clickAnimRoutine != null) StopCoroutine(_clickAnimRoutine);
@@ -165,14 +171,15 @@ namespace UI.MainMenuUI
 
             if (starAnimation != null)
             {
-                starAnimation.PlayClickSlam(onImpact: () =>
-                {
-                    TriggerPunchReaction();
-                    if (playAudio && audioSynth != null)
+                starAnimation.PlayPressSequence(
+                    onImpact: () =>
                     {
-                        audioSynth.PlayConfirm();
+                        if (playAudio && audioSynth != null)
+                        {
+                            audioSynth.PlayConfirm();
+                        }
                     }
-                });
+                );
             }
             else
             {

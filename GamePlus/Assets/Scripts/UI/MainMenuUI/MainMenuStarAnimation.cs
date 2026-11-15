@@ -6,12 +6,18 @@ using UnityEngine.UI;
 namespace UI.MainMenuUI
 {
     /// <summary>
-    /// Animates the Title Screen button's star mascot.
+    /// Master animation controller for the Title Screen star mascot.
     /// Provides:
-    /// 1. Lively organic idle animation (bobbing, breathing scale, subtle wobble).
-    /// 2. Smooth comic hover glide from left home position to button center with arc and squash/stretch.
-    /// 3. Energetic hover idle bobbing while waiting in the center.
-    /// 4. Dynamic comic slam / stamp click effect where the star physically stomps down onto the button.
+    /// 1. Relaxed organic idle at the left home position (bobbing, breathing, tilt wobble).
+    /// 2. Smooth comic hover glide to center with arc and squash/stretch cushion.
+    /// 3. Excited hover idle in center.
+    /// 4. Tactile comic press sequence:
+    ///    - Fly to center (if not already there).
+    ///    - 360° spin leap wind-up.
+    ///    - Downward plunge and shrink into the button ("mengecil seolah menekan").
+    ///    - Tactile hold / pause with micro-shudder.
+    ///    - Elastic release pop.
+    ///    - Screen transition handoff.
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public class MainMenuStarAnimation : MonoBehaviour
@@ -22,11 +28,11 @@ namespace UI.MainMenuUI
         public Image flashOverlay;
         public MainMenuUIButton parentButton;
 
-        [Header("Positions & Anchors (Relative to Button Center)")]
+        [Header("Positions & Anchors")]
         [Tooltip("Resting position at the left end of the button.")]
         public Vector2 homePosition = new Vector2(-261.33f, -13.72f);
 
-        [Tooltip("Target position when hovered (center along slanted bar).")]
+        [Tooltip("Target center position along the slanted button bar.")]
         public Vector2 centerPosition = new Vector2(0f, -4f);
 
         [Tooltip("Slant angle of the comic button (degrees).")]
@@ -36,7 +42,7 @@ namespace UI.MainMenuUI
         public Vector3 homeScale = Vector3.one;
         public Vector3 hoverScale = new Vector3(1.18f, 1.18f, 1f);
 
-        [Header("Idle Animation (When at Home)")]
+        [Header("Idle Animation (At Left Home)")]
         public bool enableIdle = true;
         public float idleBobSpeed = 2.4f;
         public float idleBobDistance = 3.5f;
@@ -56,25 +62,33 @@ namespace UI.MainMenuUI
         public float hoverBobDistance = 4.5f;
         public float hoverPulseAmount = 0.05f;
 
-        [Header("Click Slam ('Star Clicks the Button')")]
-        public float windupDuration = 0.06f;
-        public float windupLiftY = 24f;
-        public Vector3 windupScale = new Vector3(0.82f, 1.28f, 1f);
+        [Header("Press Sequence Settings")]
+        [Tooltip("Flight to center if pressed while not hovering.")]
+        public float flyToCenterDuration = 0.22f;
+        public float flyArcHeight = 24f;
 
-        public float slamDuration = 0.05f;
-        public float slamDropY = -14f;
-        public Vector3 slamSquashScale = new Vector3(1.42f, 0.62f, 1f);
+        [Tooltip("Spin wind-up before pressing down.")]
+        public float spinDuration = 0.32f;
+        public float spinLiftY = 32f;
+        public float spinTotalDegrees = 360f;
 
-        public float reboundDuration = 0.15f;
-        public Vector3 reboundBounceScale = new Vector3(1.18f, 1.18f, 1f);
+        [Tooltip("Down plunge and shrink into the button.")]
+        public float pressDuration = 0.16f;
+        public float pressDropY = -14f;
+        public Vector3 pressShrinkScale = new Vector3(0.62f, 0.62f, 1f);
+        public Vector3 pressSquashScale = new Vector3(0.70f, 0.52f, 1f);
+
+        [Tooltip("Tactile hold duration before release and scene transition.")]
+        public float holdDuration = 0.35f;
+        public float releasePopDuration = 0.14f;
 
         // State tracking
         private bool _isHovered = false;
-        private bool _isSlamming = false;
+        private bool _isPressing = false;
         private bool _isLocked = false;
         private Vector2 _currentBasePos;
         private Coroutine _activeTransitionRoutine;
-        private Coroutine _slamRoutine;
+        private Coroutine _pressRoutine;
         private Coroutine _flashRoutine;
 
         private void Awake()
@@ -98,7 +112,7 @@ namespace UI.MainMenuUI
 
         private void OnEnable()
         {
-            _isSlamming = false;
+            _isPressing = false;
             _isLocked = false;
             _isHovered = false;
             _currentBasePos = homePosition;
@@ -107,8 +121,8 @@ namespace UI.MainMenuUI
 
         private void Update()
         {
-            // Only apply ambient bobbing/breathing when not actively slamming or transitioning
-            if (_isSlamming || _activeTransitionRoutine != null) return;
+            // Only apply ambient idle/hover bobbing when not actively pressing or transitioning
+            if (_isPressing || _activeTransitionRoutine != null) return;
 
             float time = Time.unscaledTime;
 
@@ -137,7 +151,7 @@ namespace UI.MainMenuUI
 
         public void SetHover(bool hovered)
         {
-            if (_isLocked || _isSlamming) return;
+            if (_isLocked || _isPressing) return;
             if (_isHovered == hovered) return;
 
             _isHovered = hovered;
@@ -168,50 +182,24 @@ namespace UI.MainMenuUI
                 elapsed += Time.unscaledDeltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
 
-                // Smooth comic ease-out back curve for landing
                 float ease = 1f - Mathf.Pow(1f - t, 2.8f);
-
-                // Upward hop arc while travelling
                 float arc = Mathf.Sin(t * Mathf.PI) * hoverArcHeight;
 
-                // Position interpolation with arc
                 Vector2 curPos = Vector2.Lerp(startPos, targetPos, ease);
                 curPos.y += arc;
                 rectTransform.anchoredPosition = curPos;
 
-                // Scale interpolation with subtle squash/stretch on takeoff/landing
-                float stretchX = 1f;
-                float stretchY = 1f;
-                if (toCenter)
-                {
-                    // Stretch along flight direction then cushion squash
-                    if (t < 0.5f)
-                    {
-                        float midT = t / 0.5f;
-                        stretchX = Mathf.Lerp(1f, 1.15f, midT);
-                        stretchY = Mathf.Lerp(1f, 0.90f, midT);
-                    }
-                    else
-                    {
-                        float settleT = (t - 0.5f) / 0.5f;
-                        stretchX = Mathf.Lerp(1.15f, 1f, settleT);
-                        stretchY = Mathf.Lerp(0.90f, 1f, settleT);
-                    }
-                }
                 Vector3 currentTargetScale = Vector3.Lerp(startScale, targetScale, ease);
-                rectTransform.localScale = new Vector3(currentTargetScale.x * stretchX, currentTargetScale.y * stretchY, 1f);
+                rectTransform.localScale = currentTargetScale;
 
-                // Dynamic comic tilt during movement
                 float targetAngle = baseRotationAngle;
                 if (toCenter)
                 {
-                    // Lean into movement, overshoot, and settle
                     float lean = Mathf.Sin(t * Mathf.PI) * hoverLeanAngle;
                     rectTransform.localEulerAngles = new Vector3(0f, 0f, Mathf.Lerp(startAngle, targetAngle, ease) + lean);
                 }
                 else
                 {
-                    // Return tilt
                     float returnLean = Mathf.Sin(t * Mathf.PI) * (-hoverLeanAngle * 0.7f);
                     rectTransform.localEulerAngles = new Vector3(0f, 0f, Mathf.Lerp(startAngle, targetAngle, ease) + returnLean);
                 }
@@ -227,125 +215,181 @@ namespace UI.MainMenuUI
         }
 
         /// <summary>
-        /// Executes the dynamic comic click slam where the star physically stomps the button down.
+        /// Plays the full tactile press sequence:
+        /// 1. Smooth travel to center (if clicking from anywhere on screen when not hovered).
+        /// 2. Dynamic 360° spin leap wind-up.
+        /// 3. Downward press and shrink into button ("mengecil seolah menekan").
+        /// 4. Tactile hold / pause with micro-shudder so the click feels weighty and real.
+        /// 5. Elastic release pop.
+        /// 6. Triggers onTransitionReady to hand off to screen transition.
         /// </summary>
-        public void PlayClickSlam(Action onImpact = null, Action onComplete = null)
+        public void PlayPressSequence(Action onImpact = null, Action onTransitionReady = null)
         {
-            if (_isSlamming) return;
+            if (_isPressing) return;
 
             if (_activeTransitionRoutine != null)
             {
                 StopCoroutine(_activeTransitionRoutine);
                 _activeTransitionRoutine = null;
             }
-            if (_slamRoutine != null)
+            if (_pressRoutine != null)
             {
-                StopCoroutine(_slamRoutine);
+                StopCoroutine(_pressRoutine);
             }
 
-            _isSlamming = true;
+            _isPressing = true;
             _isLocked = true;
-            _slamRoutine = StartCoroutine(ClickSlamRoutine(onImpact, onComplete));
+            _pressRoutine = StartCoroutine(PressSequenceRoutine(onImpact, onTransitionReady));
         }
 
-        private IEnumerator ClickSlamRoutine(Action onImpact, Action onComplete)
+        // Backward compatibility helper
+        public void PlayClickSlam(Action onImpact = null, Action onComplete = null)
         {
-            // 0. Quick pre-position: If not already near center (e.g. keyboard press while not hovered),
-            // dash to center fast first so player sees the star smash it!
-            if (Vector2.Distance(rectTransform.anchoredPosition, centerPosition) > 50f)
+            PlayPressSequence(onImpact, onComplete);
+        }
+
+        private IEnumerator PressSequenceRoutine(Action onImpact, Action onTransitionReady)
+        {
+            // --- Phase 1: Smooth Flight to Center (if not already there) ---
+            if (Vector2.Distance(rectTransform.anchoredPosition, centerPosition) > 15f)
             {
-                float dashElapsed = 0f;
-                float dashDuration = 0.08f;
+                float flightElapsed = 0f;
                 Vector2 fromPos = rectTransform.anchoredPosition;
                 Vector3 fromScale = rectTransform.localScale;
+                float fromAngle = rectTransform.localEulerAngles.z;
+                if (fromAngle > 180f) fromAngle -= 360f;
 
-                while (dashElapsed < dashDuration)
+                while (flightElapsed < flyToCenterDuration)
                 {
-                    dashElapsed += Time.unscaledDeltaTime;
-                    float dt = Mathf.Clamp01(dashElapsed / dashDuration);
-                    rectTransform.anchoredPosition = Vector2.Lerp(fromPos, centerPosition, dt);
-                    rectTransform.localScale = Vector3.Lerp(fromScale, hoverScale, dt);
+                    flightElapsed += Time.unscaledDeltaTime;
+                    float t = Mathf.Clamp01(flightElapsed / flyToCenterDuration);
+                    float ease = 1f - Mathf.Pow(1f - t, 2.5f);
+
+                    Vector2 pos = Vector2.Lerp(fromPos, centerPosition, ease);
+                    pos.y += Mathf.Sin(t * Mathf.PI) * flyArcHeight;
+                    rectTransform.anchoredPosition = pos;
+
+                    rectTransform.localScale = Vector3.Lerp(fromScale, hoverScale, ease);
+                    rectTransform.localEulerAngles = new Vector3(0f, 0f, Mathf.Lerp(fromAngle, baseRotationAngle, ease) + Mathf.Sin(t * Mathf.PI) * hoverLeanAngle);
                     yield return null;
                 }
             }
 
             _currentBasePos = centerPosition;
+            rectTransform.anchoredPosition = centerPosition;
+            rectTransform.localScale = hoverScale;
+            rectTransform.localEulerAngles = new Vector3(0f, 0f, baseRotationAngle);
 
-            // Phase 1: Wind-up (Anticipation hop & vertical stretch)
+            // --- Phase 2: Acrobatic Spin Wind-up ("berputar") ---
+            float spinElapsed = 0f;
             Vector2 basePos = centerPosition;
-            Vector2 windupPos = basePos + new Vector2(0f, windupLiftY);
-            Vector3 startScale = hoverScale;
-            float elapsed = 0f;
+            Vector3 peakScale = hoverScale * 1.12f;
 
-            while (elapsed < windupDuration)
+            while (spinElapsed < spinDuration)
             {
-                elapsed += Time.unscaledDeltaTime;
-                float t = Mathf.Clamp01(elapsed / windupDuration);
-                float easeIn = t * t; // Acceleration upward
+                spinElapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(spinElapsed / spinDuration);
+                // Smooth ease in and out for spin
+                float spinEase = t < 0.5f ? 2f * t * t : 1f - Mathf.Pow(-2f * t + 2f, 2f) / 2f;
 
-                rectTransform.anchoredPosition = Vector2.Lerp(basePos, windupPos, easeIn);
-                rectTransform.localScale = Vector3.Lerp(startScale, windupScale, easeIn);
-                rectTransform.localEulerAngles = new Vector3(0f, 0f, baseRotationAngle - (10f * easeIn));
+                // Lift into the air during spin
+                float yLift = Mathf.Sin(t * Mathf.PI) * spinLiftY;
+                rectTransform.anchoredPosition = basePos + new Vector2(0f, yLift);
+
+                // Stretch along the leap
+                float stretchY = 1f + Mathf.Sin(t * Mathf.PI) * 0.15f;
+                rectTransform.localScale = new Vector3(peakScale.x, peakScale.y * stretchY, 1f);
+
+                // Full 360° dynamic spin
+                float angle = baseRotationAngle + (spinTotalDegrees * spinEase);
+                rectTransform.localEulerAngles = new Vector3(0f, 0f, angle);
+
                 yield return null;
             }
 
-            // Phase 2: Downward Slam (Lightning speed downward stomp onto button)
-            elapsed = 0f;
-            Vector2 slamPos = basePos + new Vector2(0f, slamDropY);
+            Vector2 peakPos = basePos + new Vector2(0f, 10f);
+            rectTransform.anchoredPosition = peakPos;
+            rectTransform.localEulerAngles = new Vector3(0f, 0f, baseRotationAngle);
 
-            while (elapsed < slamDuration)
+            // --- Phase 3: Plunge Down & Shrink into Button ("mengecil seolah menekan") ---
+            float pressElapsed = 0f;
+            Vector2 deepPressedPos = basePos + new Vector2(0f, pressDropY);
+
+            while (pressElapsed < pressDuration)
             {
-                elapsed += Time.unscaledDeltaTime;
-                float t = Mathf.Clamp01(elapsed / slamDuration);
-                float easeDown = t * t * t; // Snappy downward plunge
+                pressElapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(pressElapsed / pressDuration);
+                float easeDown = t * t * t; // Powerful downward plunge
 
-                rectTransform.anchoredPosition = Vector2.Lerp(windupPos, slamPos, easeDown);
-                rectTransform.localScale = Vector3.Lerp(windupScale, slamSquashScale, easeDown);
-                rectTransform.localEulerAngles = new Vector3(0f, 0f, baseRotationAngle);
+                rectTransform.anchoredPosition = Vector2.Lerp(peakPos, deepPressedPos, easeDown);
+
+                // Shrink and squash into the button switch
+                Vector3 currentScale = Vector3.Lerp(peakScale, pressSquashScale, easeDown);
+                rectTransform.localScale = currentScale;
+
                 yield return null;
             }
 
-            // Impact Moment! Flash, button physical depression, and impact callback
+            rectTransform.anchoredPosition = deepPressedPos;
+            rectTransform.localScale = pressSquashScale;
+
+            // --- Impact Trigger: Flash, Button Physical Depression, Sound ---
             TriggerFlash();
+            if (parentButton != null)
+            {
+                parentButton.SetButtonDepressed(true);
+            }
             onImpact?.Invoke();
 
-            // Phase 3: Elastic Rebound / Settle
-            elapsed = 0f;
-            Vector3 postImpactScale = slamSquashScale;
-
-            while (elapsed < reboundDuration)
+            // --- Phase 4: Tactile Hold & Micro-Shudder ("jeda dulu agar berasa") ---
+            float holdElapsed = 0f;
+            while (holdElapsed < holdDuration)
             {
-                elapsed += Time.unscaledDeltaTime;
-                float t = Mathf.Clamp01(elapsed / reboundDuration);
+                holdElapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(holdElapsed / holdDuration);
 
-                // Comic spring settle
-                float spring = Mathf.Sin(t * Mathf.PI * 1.5f);
-                float easeOut = 1f - Mathf.Pow(1f - t, 2.5f);
-
-                rectTransform.anchoredPosition = Vector2.Lerp(slamPos, basePos, easeOut);
-
-                // Bounce from squash -> overshoot bounce -> settle
-                if (t < 0.45f)
+                // Subtle mechanical micro-shudder during the first 60% of hold
+                if (t < 0.60f)
                 {
-                    float bounceT = t / 0.45f;
-                    rectTransform.localScale = Vector3.Lerp(postImpactScale, reboundBounceScale, bounceT);
+                    float decay = 1f - (t / 0.60f);
+                    float microShakeX = Mathf.Sin(holdElapsed * 50f) * 1.5f * decay;
+                    float microShakeY = Mathf.Cos(holdElapsed * 60f) * 1.0f * decay;
+                    rectTransform.anchoredPosition = deepPressedPos + new Vector2(microShakeX, microShakeY);
+                    rectTransform.localScale = pressSquashScale;
                 }
                 else
                 {
-                    float settleT = (t - 0.45f) / 0.55f;
-                    rectTransform.localScale = Vector3.Lerp(reboundBounceScale, hoverScale, settleT);
+                    // Latch release: start smooth spring rebound
+                    float popT = (t - 0.60f) / 0.40f;
+                    float popEase = 1f - Mathf.Pow(1f - popT, 2.5f);
+
+                    rectTransform.anchoredPosition = Vector2.Lerp(deepPressedPos, basePos, popEase);
+                    rectTransform.localScale = Vector3.Lerp(pressSquashScale, hoverScale, popEase);
+
+                    if (parentButton != null)
+                    {
+                        parentButton.SetButtonDepressed(false);
+                    }
                 }
 
                 yield return null;
             }
 
+            // Ensure clean final rest position before transition
             rectTransform.anchoredPosition = basePos;
             rectTransform.localScale = hoverScale;
             rectTransform.localEulerAngles = new Vector3(0f, 0f, baseRotationAngle);
 
-            _isSlamming = false;
-            _slamRoutine = null;
-            onComplete?.Invoke();
+            if (parentButton != null)
+            {
+                parentButton.SetButtonDepressed(false);
+            }
+
+            // --- Phase 5: Handoff to Screen Transition ("lalu baru pindah") ---
+            onTransitionReady?.Invoke();
+
+            _isPressing = false;
+            _pressRoutine = null;
         }
 
         private void TriggerFlash()
@@ -360,16 +404,16 @@ namespace UI.MainMenuUI
         {
             flashOverlay.gameObject.SetActive(true);
             Color flashCol = Color.white;
-            flashOverlay.color = new Color(flashCol.r, flashCol.g, flashCol.b, 0.9f);
+            flashOverlay.color = new Color(flashCol.r, flashCol.g, flashCol.b, 0.95f);
 
             float elapsed = 0f;
-            float duration = 0.09f;
+            float duration = 0.12f;
 
             while (elapsed < duration)
             {
                 elapsed += Time.unscaledDeltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
-                float a = Mathf.Lerp(0.9f, 0f, t);
+                float a = Mathf.Lerp(0.95f, 0f, t);
                 flashOverlay.color = new Color(flashCol.r, flashCol.g, flashCol.b, a);
                 yield return null;
             }
@@ -390,15 +434,17 @@ namespace UI.MainMenuUI
 
         public void ResetToHome()
         {
+            if (_isPressing) return;
+
             if (_activeTransitionRoutine != null)
             {
                 StopCoroutine(_activeTransitionRoutine);
                 _activeTransitionRoutine = null;
             }
-            if (_slamRoutine != null)
+            if (_pressRoutine != null)
             {
-                StopCoroutine(_slamRoutine);
-                _slamRoutine = null;
+                StopCoroutine(_pressRoutine);
+                _pressRoutine = null;
             }
             if (_flashRoutine != null)
             {
@@ -411,7 +457,12 @@ namespace UI.MainMenuUI
                 flashOverlay.gameObject.SetActive(false);
             }
 
-            _isSlamming = false;
+            if (parentButton != null)
+            {
+                parentButton.SetButtonDepressed(false);
+            }
+
+            _isPressing = false;
             _isHovered = false;
             _currentBasePos = homePosition;
 

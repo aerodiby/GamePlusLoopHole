@@ -9,51 +9,92 @@ using UnityEngine.InputSystem;
 
 namespace UI.MainMenuUI
 {
+    /// <summary>
     /// Master controller for the MainMenuUI Title Screen.
     /// Handles "Press Any Button" input, audio triggers, and clean single-fire activation.
+    /// Ensures star mascot completes full press animation (spin -> shrink -> tactile hold)
+    /// before launching the transition to the option screen.
+    /// </summary>
     public class MainMenuUIController : MonoBehaviour
     {
         [Header("References")]
         public GameObject pressAnyButtonObject;
+        public MainMenuUIButton buttonComponent;
         public MainMenuUIAudioSynthesizer audioSynth;
         public MainMenuUITransition transition;
 
         [Header("Events")]
         public UnityEvent onButtonPressed;
 
-        private MainMenuUIButton _buttonComponent;
-        private bool _hasTriggered = false;
+        private bool _isSequenceActive = false;
+        private bool _hasReachedOptionScreen = false;
+
+        private void Awake()
+        {
+            EnsureReferences();
+        }
 
         private void Start()
         {
-            if (pressAnyButtonObject != null)
+            EnsureReferences();
+        }
+
+        private void EnsureReferences()
+        {
+            if (pressAnyButtonObject == null)
             {
-                _buttonComponent = pressAnyButtonObject.GetComponent<MainMenuUIButton>();
+                var btn = GameObject.Find("Button");
+                if (btn != null) pressAnyButtonObject = btn;
             }
+
+            if (buttonComponent == null && pressAnyButtonObject != null)
+            {
+                buttonComponent = pressAnyButtonObject.GetComponent<MainMenuUIButton>();
+            }
+
             if (transition == null)
             {
                 transition = GetComponent<MainMenuUITransition>();
+            }
+            if (audioSynth == null)
+            {
+                audioSynth = GetComponent<MainMenuUIAudioSynthesizer>();
             }
         }
 
         private void Update()
         {
-            if (transition != null && (transition.isInOptionScreen || transition.IsTransitioning))
+            EnsureReferences();
+
+            // Track when the user has entered the option screen
+            if (transition != null && transition.isInOptionScreen)
+            {
+                _hasReachedOptionScreen = true;
+                return;
+            }
+
+            // Only reset when we have actually entered the Option screen and fully returned to Title Screen
+            if (_hasReachedOptionScreen && transition != null && !transition.isInOptionScreen && !transition.IsTransitioning)
+            {
+                _hasReachedOptionScreen = false;
+                _isSequenceActive = false;
+                if (buttonComponent != null)
+                {
+                    buttonComponent.SetLocked(false);
+                    if (buttonComponent.starAnimation != null)
+                    {
+                        buttonComponent.starAnimation.ResetToHome();
+                    }
+                }
+            }
+
+            // Do not accept input if sequence is already active or transition is running
+            if (_isSequenceActive || (transition != null && transition.IsTransitioning))
             {
                 return;
             }
 
-            // Reset single-fire guard when safely back in Title Screen
-            if (_hasTriggered && transition != null && !transition.isInOptionScreen && !transition.IsTransitioning)
-            {
-                _hasTriggered = false;
-                if (_buttonComponent != null)
-                {
-                    _buttonComponent.SetLocked(false);
-                }
-            }
-
-            if (!_hasTriggered && CheckAnyInputDown())
+            if (CheckAnyInputDown())
             {
                 OnPressAnyButtonActivated();
             }
@@ -83,22 +124,23 @@ namespace UI.MainMenuUI
 
         public void OnPressAnyButtonActivated()
         {
-            if (_hasTriggered) return;
+            if (_isSequenceActive) return;
             if (transition != null && (transition.isInOptionScreen || transition.IsTransitioning)) return;
 
-            _hasTriggered = true;
+            _isSequenceActive = true;
+            EnsureReferences();
 
-            // Lock button component so hover/exit won't fight with the transition
-            if (_buttonComponent != null)
+            // Lock button component so hover/exit won't fight
+            if (buttonComponent != null)
             {
-                _buttonComponent.SetLocked(true);
+                buttonComponent.SetLocked(true);
             }
 
             Debug.Log("[MainMenuUI] 'Press Any Button' activated cleanly!");
 
-            if (_buttonComponent != null && _buttonComponent.starAnimation != null)
+            if (buttonComponent != null && buttonComponent.starAnimation != null)
             {
-                StartCoroutine(ExecuteSlamAndTransition());
+                StartCoroutine(ExecutePressAndTransition());
             }
             else
             {
@@ -106,49 +148,41 @@ namespace UI.MainMenuUI
                 {
                     transition.StartTransitionToOption();
                 }
-                else
+                else if (audioSynth != null)
                 {
-                    if (_buttonComponent != null)
-                    {
-                        _buttonComponent.TriggerClickEffect(playAudio: true);
-                    }
-                    else if (audioSynth != null)
-                    {
-                        audioSynth.PlayConfirm();
-                    }
+                    audioSynth.PlayConfirm();
                 }
 
                 onButtonPressed?.Invoke();
             }
         }
 
-        private IEnumerator ExecuteSlamAndTransition()
+        private IEnumerator ExecutePressAndTransition()
         {
-            bool impactFired = false;
+            bool transitionTriggered = false;
 
-            _buttonComponent.starAnimation.PlayClickSlam(
+            buttonComponent.starAnimation.PlayPressSequence(
                 onImpact: () =>
                 {
-                    impactFired = true;
-                    if (_buttonComponent != null)
-                    {
-                        _buttonComponent.TriggerPunchReaction();
-                    }
                     if (audioSynth != null)
                     {
                         audioSynth.PlayConfirm();
                     }
+                    onButtonPressed?.Invoke();
+                },
+                onTransitionReady: () =>
+                {
+                    transitionTriggered = true;
                     if (transition != null)
                     {
                         transition.StartTransitionToOption();
                     }
-                    onButtonPressed?.Invoke();
                 }
             );
 
-            // Safety timeout in case callback isn't fired
-            yield return new WaitForSecondsRealtime(0.25f);
-            if (!impactFired)
+            // Generous fallback timeout (2.5s) in case transition wasn't called
+            yield return new WaitForSecondsRealtime(2.5f);
+            if (!transitionTriggered)
             {
                 if (transition != null && !transition.IsTransitioning && !transition.isInOptionScreen)
                 {

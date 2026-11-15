@@ -229,12 +229,7 @@ namespace UI.MainMenuUI
             float speedMult = Mathf.Max(0.05f, transitionSpeed);
             float duration = diveDuration / speedMult;
 
-            // 1. Initial click punch & sound
-            if (audioSynth != null) audioSynth.PlayConfirm();
-            if (buttonTransform != null) buttonTransform.localScale = _buttonInitialScale * 0.94f;
-
-            yield return new WaitForSecondsRealtime(0.04f / speedMult);
-
+            // 1. Launch whoosh
             if (audioSynth != null) audioSynth.PlayAscendWhoosh();
 
             // 2. Activate SpeedLines overlay & initialize backdrop

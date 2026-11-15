@@ -2189,6 +2189,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UI.MainMenuUI.MainMenuUIController
   pressAnyButtonObject: {fileID: 988805630}
+  buttonComponent: {fileID: 988805635}
   audioSynth: {fileID: 479061829}
   transition: {fileID: 479061831}
   onButtonPressed:
@@ -4963,14 +4964,17 @@ MonoBehaviour:
   hoverBobSpeed: 4.2
   hoverBobDistance: 4.5
   hoverPulseAmount: 0.05
-  windupDuration: 0.06
-  windupLiftY: 24
-  windupScale: {x: 0.82, y: 1.28, z: 1}
-  slamDuration: 0.05
-  slamDropY: -14
-  slamSquashScale: {x: 1.42, y: 0.62, z: 1}
-  reboundDuration: 0.15
-  reboundBounceScale: {x: 1.18, y: 1.18, z: 1}
+  flyToCenterDuration: 0.2
+  flyArcHeight: 20
+  spinDuration: 0.28
+  spinLiftY: 26
+  spinTotalDegrees: 360
+  pressDuration: 0.15
+  pressDropY: -14
+  pressShrinkScale: {x: 0.68, y: 0.68, z: 1}
+  pressSquashScale: {x: 0.78, y: 0.58, z: 1}
+  holdDuration: 0.3
+  releasePopDuration: 0.12
 --- !u!114 &1282906256
 MonoBehaviour:
   m_ObjectHideFlags: 0
