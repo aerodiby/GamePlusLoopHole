@@ -379,7 +379,7 @@ MonoBehaviour:
   maxSpeed: 4
   smoothing: 14
   teleportThreshold: 20
-  particlesPerMeter: 30
+  particlesPerMeter: 55
   maxRatePerSecond: 150
   spawnRadius: 0.3
   spawnHeightOffset: 0.02
@@ -388,8 +388,8 @@ MonoBehaviour:
   spread: 1
   forwardDrag: 0.2
   startColor: {r: 0.86, g: 0.82, b: 0.74, a: 0.75}
-  sizeMin: 0.2
-  sizeMax: 0.5
+  sizeMin: 0.3
+  sizeMax: 0.9
   lifeMin: 0.6
   lifeMax: 1.5
   drawGizmo: 0
@@ -5151,7 +5151,7 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -5624726642823754363, guid: 03c887a29f346e8498fc84e226b583b8, type: 3}
+  - {fileID: 10308, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
