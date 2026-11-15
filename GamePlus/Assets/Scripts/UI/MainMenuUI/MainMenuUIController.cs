@@ -96,23 +96,65 @@ namespace UI.MainMenuUI
 
             Debug.Log("[MainMenuUI] 'Press Any Button' activated cleanly!");
 
-            if (transition != null)
+            if (_buttonComponent != null && _buttonComponent.starAnimation != null)
             {
-                transition.StartTransitionToOption();
+                StartCoroutine(ExecuteSlamAndTransition());
             }
             else
             {
-                if (_buttonComponent != null)
+                if (transition != null)
                 {
-                    _buttonComponent.TriggerClickEffect(playAudio: true);
+                    transition.StartTransitionToOption();
                 }
-                else if (audioSynth != null)
+                else
                 {
-                    audioSynth.PlayConfirm();
+                    if (_buttonComponent != null)
+                    {
+                        _buttonComponent.TriggerClickEffect(playAudio: true);
+                    }
+                    else if (audioSynth != null)
+                    {
+                        audioSynth.PlayConfirm();
+                    }
+                }
+
+                onButtonPressed?.Invoke();
+            }
+        }
+
+        private IEnumerator ExecuteSlamAndTransition()
+        {
+            bool impactFired = false;
+
+            _buttonComponent.starAnimation.PlayClickSlam(
+                onImpact: () =>
+                {
+                    impactFired = true;
+                    if (_buttonComponent != null)
+                    {
+                        _buttonComponent.TriggerPunchReaction();
+                    }
+                    if (audioSynth != null)
+                    {
+                        audioSynth.PlayConfirm();
+                    }
+                    if (transition != null)
+                    {
+                        transition.StartTransitionToOption();
+                    }
+                    onButtonPressed?.Invoke();
+                }
+            );
+
+            // Safety timeout in case callback isn't fired
+            yield return new WaitForSecondsRealtime(0.25f);
+            if (!impactFired)
+            {
+                if (transition != null && !transition.IsTransitioning && !transition.isInOptionScreen)
+                {
+                    transition.StartTransitionToOption();
                 }
             }
-
-            onButtonPressed?.Invoke();
         }
     }
 }

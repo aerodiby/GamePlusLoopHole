@@ -15,6 +15,7 @@ namespace UI.MainMenuUI
         public Image highlightBanner;
         public TextMeshProUGUI buttonText;
         public Image accentTab;
+        public MainMenuStarAnimation starAnimation;
         public MainMenuUIAudioSynthesizer audioSynth;
         public MainMenuUIController mainController;
 
@@ -41,6 +42,10 @@ namespace UI.MainMenuUI
             {
                 mainController = Object.FindFirstObjectByType<MainMenuUIController>();
             }
+            if (starAnimation == null)
+            {
+                starAnimation = GetComponentInChildren<MainMenuStarAnimation>();
+            }
             SetHoverVisual(false, playAudio: false);
         }
 
@@ -48,6 +53,10 @@ namespace UI.MainMenuUI
         {
             _isLocked = false;
             transform.localScale = _baseScale;
+            if (starAnimation != null)
+            {
+                starAnimation.ResetToHome();
+            }
             SetHoverVisual(false, playAudio: false);
         }
 
@@ -58,6 +67,14 @@ namespace UI.MainMenuUI
             {
                 StopCoroutine(_clickAnimRoutine);
                 _clickAnimRoutine = null;
+            }
+            if (starAnimation != null)
+            {
+                starAnimation.SetLocked(locked);
+                if (!locked)
+                {
+                    starAnimation.ResetToHome();
+                }
             }
         }
 
@@ -123,6 +140,11 @@ namespace UI.MainMenuUI
                 accentTab.transform.localScale = active ? Vector3.one * 1.15f : Vector3.one;
             }
 
+            if (starAnimation != null)
+            {
+                starAnimation.SetHover(active);
+            }
+
             transform.localScale = _baseScale * (active ? hoverScale : 1f);
 
             if (active && playAudio && audioSynth != null)
@@ -131,16 +153,34 @@ namespace UI.MainMenuUI
             }
         }
 
+        public void TriggerPunchReaction()
+        {
+            if (_clickAnimRoutine != null) StopCoroutine(_clickAnimRoutine);
+            _clickAnimRoutine = StartCoroutine(ClickAnimationRoutine());
+        }
+
         public void TriggerClickEffect(bool playAudio = true)
         {
             if (_isLocked) return;
 
-            if (_clickAnimRoutine != null) StopCoroutine(_clickAnimRoutine);
-            _clickAnimRoutine = StartCoroutine(ClickAnimationRoutine());
-
-            if (playAudio && audioSynth != null)
+            if (starAnimation != null)
             {
-                audioSynth.PlayConfirm();
+                starAnimation.PlayClickSlam(onImpact: () =>
+                {
+                    TriggerPunchReaction();
+                    if (playAudio && audioSynth != null)
+                    {
+                        audioSynth.PlayConfirm();
+                    }
+                });
+            }
+            else
+            {
+                TriggerPunchReaction();
+                if (playAudio && audioSynth != null)
+                {
+                    audioSynth.PlayConfirm();
+                }
             }
         }
 
