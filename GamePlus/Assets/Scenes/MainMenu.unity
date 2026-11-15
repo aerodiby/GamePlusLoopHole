@@ -3933,13 +3933,13 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 978224031}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0.01745245, w: 0.99984777}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 988805634}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 2}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: -12.5, y: 0}
@@ -4030,7 +4030,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -675730605787891010, guid: 4a21a5d68b0308040b062db612ffd6de, type: 3}
+  m_Sprite: {fileID: 649223268058989734, guid: 834da19c2e6d42146bcb582203f55885, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4065,8 +4065,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -270, y: -253}
-  m_SizeDelta: {x: 640, y: 85}
+  m_AnchoredPosition: {x: -299, y: -249}
+  m_SizeDelta: {x: 640, y: 141.17}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &988805635
 MonoBehaviour:
@@ -6928,7 +6928,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2076350872
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7012,6 +7012,8 @@ MonoBehaviour:
   textSelectedColor: {r: 0.08, g: 0.04, b: 0.16, a: 1}
   highlightMoveSpeed: 24
   punchScaleMultiplier: 1.05
+  gameplaySceneName: SampleScene
+  autoLoadSceneOnPlay: 1
   audioSynth: {fileID: 479061829}
   transition: {fileID: 479061831}
   _currentIndex: 1
