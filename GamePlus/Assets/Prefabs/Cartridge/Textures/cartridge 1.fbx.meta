@@ -8,22 +8,22 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: CartBottowPart
-    second: {fileID: 2100000, guid: 3ba101b7e0790fc4ca9252666aa5abb7, type: 2}
+    second: {fileID: 2100000, guid: 2bcd2f2d75f6a7349b3eb36d44ee488e, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: CartCrackPart
-    second: {fileID: 2100000, guid: 52524b40b0d44084bb30fea6870a3c4c, type: 2}
+    second: {fileID: 2100000, guid: 015d659b6aeeb1549890cbb40d598468, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: CartFace
-    second: {fileID: 2100000, guid: 7a01863e0487b6543a95a754f86be691, type: 2}
+    second: {fileID: 2100000, guid: 21e911860b72c0140a01f679f3533ba3, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: CartUpperpart
-    second: {fileID: 2100000, guid: 8670345a295a98a40bfbc8ca3d826881, type: 2}
+    second: {fileID: 2100000, guid: ae3fea919b004db4b9e3d459a2af8be3, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
