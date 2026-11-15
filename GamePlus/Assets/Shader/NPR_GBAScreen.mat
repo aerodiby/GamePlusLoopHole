@@ -30,19 +30,19 @@ Material:
     m_Ints: []
     m_Floats:
     - _Brightness: 1.15
-    - _Contrast: 0.95
+    - _Contrast: 1.08
     - _Dither: 0.6
-    - _Ghost: 0.35
+    - _Ghost: 0.443
     - _Glitch: 0
     - _GridDark: 0.18
     - _GridSize: 240
-    - _Levels: 32
+    - _Levels: 23.4
     - _Off: 0
     - _Power: 1
     - _Roll: 0
-    - _Scanline: 0.1
+    - _Scanline: 0.259
     - _Seed: 0
-    - _Wash: 0.55
+    - _Wash: 0.658
     m_Colors:
     - _Tint: {r: 0.88, g: 0.95, b: 1, a: 1}
   m_BuildTextureStacks: []
