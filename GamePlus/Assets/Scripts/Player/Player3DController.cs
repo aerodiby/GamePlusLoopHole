@@ -27,6 +27,7 @@ public class Player3DController : MonoBehaviour
     private Rigidbody grabbedBox;
     private float currentHoldDistance;
     private float lockedBoxY;
+    public DustOnMove dust;
 
     void Awake()
     {
@@ -156,6 +157,18 @@ public class Player3DController : MonoBehaviour
 
         // Paksa rotasi box tetap lurus (0,0,0) agar bentuk collider 2D tetap kotak sempurna
         grabbedBox.MoveRotation(Quaternion.identity);
+    }
+
+
+
+    void OnGrab()
+    {
+        dust.BeginInteract();
+    }
+
+    void OnRelease()
+    {
+        dust.EndInteract();
     }
 
     void OnDisable()
