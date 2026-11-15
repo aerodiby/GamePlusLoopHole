@@ -482,8 +482,69 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6289372280161918061, guid: e9c7ee5ad02e8814cab65920e0637921, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1384378440732774083}
   m_SourcePrefab: {fileID: 100100000, guid: e9c7ee5ad02e8814cab65920e0637921, type: 3}
+--- !u!1 &1384378440732774079 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6289372280161918061, guid: e9c7ee5ad02e8814cab65920e0637921, type: 3}
+  m_PrefabInstance: {fileID: 1384378440732774078}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1384378440732774080 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6818971714957457820, guid: e9c7ee5ad02e8814cab65920e0637921, type: 3}
+  m_PrefabInstance: {fileID: 1384378440732774078}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 874b8bb110e28fc4d8a56379496d4672, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GBAHandsController
+--- !u!114 &1384378440732774081 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1558974775970842932, guid: e9c7ee5ad02e8814cab65920e0637921, type: 3}
+  m_PrefabInstance: {fileID: 1384378440732774078}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19931b80c5726904795ec7df7946c482, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GBAScreenPower
+--- !u!95 &1384378440732774082 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 7897626064880215123, guid: e9c7ee5ad02e8814cab65920e0637921, type: 3}
+  m_PrefabInstance: {fileID: 1384378440732774078}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1384378440732774083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1384378440732774079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45a4803c8db7703408b8535c697afcd2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GBATestDriver
+  animator: {fileID: 1384378440732774082}
+  screen: {fileID: 1384378440732774081}
+  hands: {fileID: 1384378440732774080}
+  idleState: Reference_Idle
+  useState: Reference_UseGB
+  unUseState: Reference_UnUseGB
+  usingParam: isUsing
+  useKey: 101
+  unUseKey: 113
+  resetKey: 114
+  autoTest: 0
+  autoUseDelay: 2
+  autoUnUseDelay: 5
+  showHud: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
