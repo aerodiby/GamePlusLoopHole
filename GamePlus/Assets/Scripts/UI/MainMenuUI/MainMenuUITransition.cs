@@ -287,13 +287,12 @@ namespace UI.MainMenuUI
                     darkBackdrop.color = new Color(0.04f, 0.05f, 0.09f, darkAlpha);
                 }
 
-                // C. Background Parallax (scales gently to 1.10x and drifts down 80px)
-                // Stays 100% within canvas boundaries!
+                // C. Background Parallax (scales safely to 1.18x and drifts down 45px - 100% full coverage, zero gaps)
                 if (backgroundTransform != null)
                 {
                     float bgT = Mathf.SmoothStep(0f, 1f, p);
-                    backgroundTransform.localScale = Vector3.Lerp(_bgInitialScale, _bgInitialScale * 1.10f, bgT);
-                    backgroundTransform.anchoredPosition = Vector2.Lerp(_bgInitialPos, new Vector2(_bgInitialPos.x, _bgInitialPos.y - 80f), bgT);
+                    backgroundTransform.localScale = Vector3.Lerp(_bgInitialScale, _bgInitialScale * 1.18f, bgT);
+                    backgroundTransform.anchoredPosition = Vector2.Lerp(_bgInitialPos, new Vector2(_bgInitialPos.x, _bgInitialPos.y - 45f), bgT);
                 }
 
                 // D. Title & Button: Smoothly glide down and fade out during first 38%
@@ -464,12 +463,12 @@ namespace UI.MainMenuUI
                         menuOptionScreenObject.SetActive(false);
                 }
 
-                // D. Background Parallax Return
+                // D. Background Parallax Return (from 1.18x/-45px back to 1.0x/0px)
                 if (backgroundTransform != null)
                 {
                     float bgT = Mathf.SmoothStep(0f, 1f, p);
-                    backgroundTransform.localScale = Vector3.Lerp(_bgInitialScale * 1.10f, _bgInitialScale, bgT);
-                    backgroundTransform.anchoredPosition = Vector2.Lerp(new Vector2(_bgInitialPos.x, _bgInitialPos.y - 80f), _bgInitialPos, bgT);
+                    backgroundTransform.localScale = Vector3.Lerp(_bgInitialScale * 1.18f, _bgInitialScale, bgT);
+                    backgroundTransform.anchoredPosition = Vector2.Lerp(new Vector2(_bgInitialPos.x, _bgInitialPos.y - 45f), _bgInitialPos, bgT);
                 }
 
                 // E. Title & Button: Descend from +240px and settle with natural comic cushion

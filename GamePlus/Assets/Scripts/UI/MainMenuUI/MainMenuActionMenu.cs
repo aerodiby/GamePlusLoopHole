@@ -102,6 +102,8 @@ namespace UI.MainMenuUI
 
         private void Awake()
         {
+            RefreshButtonReferences();
+
             if (transition == null)
             {
                 transition = GetComponentInParent<MainMenuUITransition>();
@@ -121,12 +123,47 @@ namespace UI.MainMenuUI
             }
         }
 
+        public void RefreshButtonReferences()
+        {
+            if (buttonTransforms == null) buttonTransforms = new List<RectTransform>();
+            if (buttonTexts == null) buttonTexts = new List<TextMeshProUGUI>();
+
+            buttonTransforms.RemoveAll(t => t == null);
+            buttonTexts.RemoveAll(t => t == null);
+
+            Transform btnsContainer = cardContainer != null ? cardContainer.Find("ButtonsContainer") : transform.Find("ActionMenuCard/ButtonsContainer");
+            if (btnsContainer != null && (buttonTransforms.Count == 0 || buttonTransforms.Count != btnsContainer.childCount))
+            {
+                buttonTransforms.Clear();
+                buttonTexts.Clear();
+                for (int i = 0; i < btnsContainer.childCount; i++)
+                {
+                    var child = btnsContainer.GetChild(i) as RectTransform;
+                    if (child != null)
+                    {
+                        buttonTransforms.Add(child);
+                        var tmp = child.GetComponentInChildren<TextMeshProUGUI>(true);
+                        buttonTexts.Add(tmp);
+
+                        var item = child.GetComponent<MainMenuActionMenuItem>();
+                        if (item != null)
+                        {
+                            item.index = i;
+                            item.menu = this;
+                        }
+                    }
+                }
+            }
+        }
+
         private void OnEnable()
         {
+            RefreshButtonReferences();
+
             // Initial positioning
             if (_currentIndex < 0 || _currentIndex >= options.Count)
             {
-                _currentIndex = 1;
+                _currentIndex = Mathf.Clamp(1, 0, Mathf.Max(0, options.Count - 1));
             }
 
             SnapToSelection(_currentIndex);
