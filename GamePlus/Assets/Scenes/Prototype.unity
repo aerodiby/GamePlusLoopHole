@@ -1901,7 +1901,7 @@ Transform:
   m_GameObject: {fileID: 336836323}
   serializedVersion: 2
   m_LocalRotation: {x: -0.06975647, y: 0, z: 0, w: 0.9975641}
-  m_LocalPosition: {x: 0.64759713, y: -246024.08, z: -1729508.6}
+  m_LocalPosition: {x: 0.6416605, y: -270265.12, z: -1902132.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -8446,6 +8446,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8411858268562088624, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: frontFaceOnly
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 9064370430325341895, guid: 78087025bada39545871ee7e6d791759, type: 3}
       propertyPath: m_Name
       value: crate
@@ -10977,6 +10981,7 @@ GameObject:
   - component: {fileID: 1884940560}
   - component: {fileID: 1884940559}
   - component: {fileID: 1884940558}
+  - component: {fileID: 1884940562}
   m_Layer: 6
   m_Name: Player_2D
   m_TagString: Untagged
@@ -11017,6 +11022,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 64
   groundCheckDistance: 0.1
+  animator: {fileID: 0}
   isGrounded: 0
 --- !u!212 &1884940559
 SpriteRenderer:
@@ -11067,7 +11073,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 8020143640844766479, guid: 470b437ae17929742950f6db447c0751, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -11138,9 +11144,31 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0.0015421808, y: 0.0040517747}
-  m_Size: {x: 0.16670877, y: 0.16670877}
+  m_Offset: {x: 0.0015421808, y: -0.055028245}
+  m_Size: {x: 0.16670877, y: 0.22610942}
   m_Direction: 0
+--- !u!95 &1884940562
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1884940556}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 105a1e3e89fdcf44a95984d8335548c7, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1906876498
 GameObject:
   m_ObjectHideFlags: 0
@@ -12210,7 +12238,7 @@ Transform:
   m_GameObject: {fileID: 2585295900928016234}
   serializedVersion: 2
   m_LocalRotation: {x: -0.06975647, y: 0, z: 0, w: 0.9975641}
-  m_LocalPosition: {x: 0.64759713, y: -246024.08, z: -1729508.6}
+  m_LocalPosition: {x: 0.6416605, y: -270265.12, z: -1902132.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
