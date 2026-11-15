@@ -30,32 +30,26 @@ namespace UI.MainMenuUI
         {
             new ActionMenuOption
             {
-                title = "Continue",
-                description = "Resume beat synchronization from checkpoint.",
-                onExecute = new UnityEvent()
-            },
-            new ActionMenuOption
-            {
-                title = "New Game",
+                title = "PLAY",
                 description = "Start a new adventure!",
                 onExecute = new UnityEvent()
             },
             new ActionMenuOption
             {
-                title = "Options",
-                description = "Gameplay, visual, sound and accessibility adjustments!",
+                title = "OPTIONS",
+                description = "Adjust audio, video, and gameplay settings!",
                 onExecute = new UnityEvent()
             },
             new ActionMenuOption
             {
-                title = "Bethesda.net",
-                description = "Online features and community network.",
+                title = "CREDITS",
+                description = "View the development team and contributors!",
                 onExecute = new UnityEvent()
             },
             new ActionMenuOption
             {
-                title = "Exit Game",
-                description = "Close the application.",
+                title = "EXIT",
+                description = "Close and exit the application.",
                 onExecute = new UnityEvent()
             }
         };
@@ -68,10 +62,18 @@ namespace UI.MainMenuUI
         public List<TextMeshProUGUI> buttonTexts = new List<TextMeshProUGUI>();
 
         [Header("Appearance & Colors")]
-        public Color textNormalColor = Color.white;
-        public Color textSelectedColor = new Color(0.08f, 0.04f, 0.16f, 1f); // Deep obsidian black
+        public Color textNormalColor = new Color(0.20f, 0.12f, 0.05f, 1f); // Comic dark charcoal brown
+        public Color textSelectedColor = new Color(0.08f, 0.04f, 0.02f, 1f); // Comic obsidian black
         public float highlightMoveSpeed = 24f;
         public float punchScaleMultiplier = 1.05f;
+        public Vector2 highlightOffset = Vector2.zero;
+
+        [Header("Board Slant Alignment")]
+        [Tooltip("If true, automatically adjusts highlight X to match the board's slanted left edge.")]
+        public bool autoTrackBoardSlant = true;
+        public float slantSlope = 0.05253f;
+        public float slantIntercept = -173.89f;
+        public float leftBorderPinOffset = 159.3f; // Distance from board left edge to banner center (places pin on border)
 
         [Header("Gameplay Scene Loading")]
         [Tooltip("Name of the scene to load when selecting Play / Continue / New Game")]
@@ -83,7 +85,7 @@ namespace UI.MainMenuUI
         public MainMenuUITransition transition;
 
         [Header("State")]
-        [SerializeField] private int _currentIndex = 1; // Default to "New Game"
+        [SerializeField] private int _currentIndex = 0; // Default to "PLAY"
         public int CurrentIndex => _currentIndex;
 
         private Vector2 _targetHighlightPos;
@@ -311,13 +313,26 @@ namespace UI.MainMenuUI
             }
         }
 
+        public Vector2 CalculateHighlightPositionForIndex(int idx)
+        {
+            if (buttonTransforms.Count <= idx || buttonTransforms[idx] == null) return Vector2.zero;
+            Vector2 btnPos = buttonTransforms[idx].anchoredPosition;
+            float targetX = btnPos.x;
+            if (autoTrackBoardSlant)
+            {
+                float borderX = slantSlope * btnPos.y + slantIntercept;
+                targetX = borderX + leftBorderPinOffset;
+            }
+            return new Vector2(targetX, btnPos.y) + highlightOffset;
+        }
+
         public void SnapToSelection(int index)
         {
             _currentIndex = Mathf.Clamp(index, 0, Mathf.Max(0, options.Count - 1));
 
             if (buttonTransforms.Count > _currentIndex && buttonTransforms[_currentIndex] != null)
             {
-                _targetHighlightPos = buttonTransforms[_currentIndex].anchoredPosition;
+                _targetHighlightPos = CalculateHighlightPositionForIndex(_currentIndex);
                 if (selectionHighlight != null)
                 {
                     selectionHighlight.anchoredPosition = _targetHighlightPos;
@@ -333,7 +348,7 @@ namespace UI.MainMenuUI
         {
             if (buttonTransforms.Count > _currentIndex && buttonTransforms[_currentIndex] != null)
             {
-                _targetHighlightPos = buttonTransforms[_currentIndex].anchoredPosition;
+                _targetHighlightPos = CalculateHighlightPositionForIndex(_currentIndex);
 
                 if (punch && selectionHighlight != null)
                 {
