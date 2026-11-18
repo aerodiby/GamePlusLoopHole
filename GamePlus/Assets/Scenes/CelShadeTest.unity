@@ -119,6 +119,75 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &190948616
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1738938528125469065, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.4465954
+      objectReference: {fileID: 0}
+    - target: {fileID: 1738938528125469065, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.1116347
+      objectReference: {fileID: 0}
+    - target: {fileID: 1738938528125469065, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 7.349219
+      objectReference: {fileID: 0}
+    - target: {fileID: 1738938528125469065, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1738938528125469065, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1738938528125469065, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1738938528125469065, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1738938528125469065, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1738938528125469065, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1738938528125469065, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8398763361782836555, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -3.82
+      objectReference: {fileID: 0}
+    - target: {fileID: 8398763361782836555, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.27
+      objectReference: {fileID: 0}
+    - target: {fileID: 8398763361782836555, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -12.22
+      objectReference: {fileID: 0}
+    - target: {fileID: 9064370430325341895, guid: 78087025bada39545871ee7e6d791759, type: 3}
+      propertyPath: m_Name
+      value: crate
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 78087025bada39545871ee7e6d791759, type: 3}
 --- !u!1 &549764376
 GameObject:
   m_ObjectHideFlags: 0
@@ -370,6 +439,7 @@ GameObject:
   - component: {fileID: 1582352819}
   - component: {fileID: 1582352818}
   - component: {fileID: 1582352821}
+  - component: {fileID: 1582352822}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -421,7 +491,7 @@ Camera:
   field of view: 60
   orthographic: 0
   orthographic size: 5
-  m_Depth: -1
+  m_Depth: 1
   m_CullingMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -468,7 +538,7 @@ MonoBehaviour:
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
   m_Cameras: []
-  m_RendererIndex: -1
+  m_RendererIndex: 0
   m_VolumeLayerMask:
     serializedVersion: 2
     m_Bits: 1
@@ -495,6 +565,24 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &1582352822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1582352817}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f6889136ca882d40b97c957079105ef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GBACamera
+  renderWidth: 240
+  renderHeight: 160
+  forceOrthographic: 1
+  orthographicSize: 5
+  preserveAspect: 1
+  backgroundColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -502,3 +590,4 @@ SceneRoots:
   - {fileID: 1582352820}
   - {fileID: 549764378}
   - {fileID: 568312977}
+  - {fileID: 190948616}
